@@ -4,11 +4,27 @@ import { pollData } from '@/data/pollData';
 import PollCard from '@/components/PollCard';
 import ScrollIndicator from '@/components/ScrollIndicator';
 
+// Fisher-Yates shuffle algorithm to randomize polls
+const shuffleArray = (array: any[]) => {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+};
+
 const Index = () => {
+  const [randomizedPolls, setRandomizedPolls] = useState(() => shuffleArray(pollData));
   const [currentPollIndex, setCurrentPollIndex] = useState(0);
   const [isScrolling, setIsScrolling] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollTimeoutRef = useRef<NodeJS.Timeout>();
+
+  // Randomize polls on page reload
+  useEffect(() => {
+    setRandomizedPolls(shuffleArray(pollData));
+  }, []);
 
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
@@ -21,7 +37,7 @@ const Index = () => {
       if (e.deltaY > 0) {
         // Scroll down - next poll
         setCurrentPollIndex((prev) => 
-          prev < pollData.length - 1 ? prev + 1 : prev
+          prev < randomizedPolls.length - 1 ? prev + 1 : prev
         );
       } else {
         // Scroll up - previous poll
@@ -43,7 +59,7 @@ const Index = () => {
         e.preventDefault();
         setIsScrolling(true);
         setCurrentPollIndex((prev) => 
-          prev < pollData.length - 1 ? prev + 1 : prev
+          prev < randomizedPolls.length - 1 ? prev + 1 : prev
         );
         scrollTimeoutRef.current = setTimeout(() => {
           setIsScrolling(false);
@@ -60,9 +76,48 @@ const Index = () => {
       }
     };
 
+    // Touch event handlers for mobile swiping
+    let touchStartY = 0;
+    let touchEndY = 0;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      touchStartY = e.changedTouches[0].screenY;
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      touchEndY = e.changedTouches[0].screenY;
+      
+      if (isScrolling) return;
+      
+      const swipeThreshold = 50;
+      const swipeDistance = touchStartY - touchEndY;
+      
+      if (Math.abs(swipeDistance) > swipeThreshold) {
+        setIsScrolling(true);
+        
+        if (swipeDistance > 0) {
+          // Swipe up - next poll
+          setCurrentPollIndex((prev) => 
+            prev < randomizedPolls.length - 1 ? prev + 1 : prev
+          );
+        } else {
+          // Swipe down - previous poll
+          setCurrentPollIndex((prev) => 
+            prev > 0 ? prev - 1 : prev
+          );
+        }
+        
+        scrollTimeoutRef.current = setTimeout(() => {
+          setIsScrolling(false);
+        }, 800);
+      }
+    };
+
     const container = containerRef.current;
     if (container) {
       container.addEventListener('wheel', handleWheel, { passive: false });
+      container.addEventListener('touchstart', handleTouchStart, { passive: true });
+      container.addEventListener('touchend', handleTouchEnd, { passive: true });
     }
     
     window.addEventListener('keydown', handleKeyDown);
@@ -70,13 +125,15 @@ const Index = () => {
     return () => {
       if (container) {
         container.removeEventListener('wheel', handleWheel);
+        container.removeEventListener('touchstart', handleTouchStart);
+        container.removeEventListener('touchend', handleTouchEnd);
       }
       window.removeEventListener('keydown', handleKeyDown);
       if (scrollTimeoutRef.current) {
         clearTimeout(scrollTimeoutRef.current);
       }
     };
-  }, [isScrolling]);
+  }, [isScrolling, randomizedPolls.length]);
 
   return (
     <div 
@@ -96,7 +153,7 @@ const Index = () => {
               </h1>
             </div>
             <div className="text-sm text-gray-600">
-              Scroll to explore • Use ↑↓ keys
+              Scroll to explore • Use ↑↓ keys • Swipe on mobile
             </div>
           </div>
         </div>
@@ -104,9 +161,9 @@ const Index = () => {
 
       {/* Main Content */}
       <div className="pt-20">
-        {pollData.map((poll, index) => (
+        {randomizedPolls.map((poll, index) => (
           <div
-            key={poll.id}
+            key={`${poll.id}-${index}`}
             className={`transition-all duration-700 ease-in-out ${
               index === currentPollIndex 
                 ? 'opacity-100 transform translate-y-0' 
@@ -131,7 +188,7 @@ const Index = () => {
       {/* Scroll Indicator */}
       <ScrollIndicator 
         currentPoll={currentPollIndex} 
-        totalPolls={pollData.length} 
+        totalPolls={randomizedPolls.length} 
       />
 
       {/* Navigation Hints */}
@@ -142,14 +199,14 @@ const Index = () => {
               <div className="w-6 h-6 bg-gray-100 rounded border flex items-center justify-center">
                 ↑
               </div>
-              <span>Previous</span>
+              <span>Next</span>
             </div>
             <div className="w-px h-4 bg-gray-300"></div>
             <div className="flex items-center space-x-2">
               <div className="w-6 h-6 bg-gray-100 rounded border flex items-center justify-center">
                 ↓
               </div>
-              <span>Next</span>
+              <span>Previous</span>
             </div>
           </div>
         </div>

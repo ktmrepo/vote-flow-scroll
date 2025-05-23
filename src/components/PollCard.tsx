@@ -64,7 +64,7 @@ const PollCard = ({ poll, isActive }: PollCardProps) => {
 
         {!hasVoted ? (
           <div className="space-y-4">
-            <p className="text-center text-gray-600 mb-6 text-lg">Cast your vote:</p>
+            <p className="text-center text-gray-600 mb-6 text-lg">Cast your vote or scroll to continue:</p>
             {poll.options.map((option, index) => (
               <button
                 key={option.id}
