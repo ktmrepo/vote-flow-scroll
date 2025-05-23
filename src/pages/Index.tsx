@@ -19,97 +19,70 @@ const Index = () => {
   const [currentPollIndex, setCurrentPollIndex] = useState(0);
   const [isScrolling, setIsScrolling] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const scrollTimeoutRef = useRef<NodeJS.Timeout>();
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Randomize polls on page reload
   useEffect(() => {
     setRandomizedPolls(shuffleArray(pollData));
   }, []);
 
+  // Function to handle navigation
+  const navigatePoll = (direction: 'next' | 'prev') => {
+    if (isScrolling) return;
+    
+    setIsScrolling(true);
+    
+    if (direction === 'next') {
+      setCurrentPollIndex((prev) => 
+        prev < randomizedPolls.length - 1 ? prev + 1 : prev
+      );
+    } else {
+      setCurrentPollIndex((prev) => 
+        prev > 0 ? prev - 1 : prev
+      );
+    }
+    
+    // Reset scrolling flag after animation
+    if (scrollTimeoutRef.current) {
+      clearTimeout(scrollTimeoutRef.current);
+    }
+    
+    scrollTimeoutRef.current = setTimeout(() => {
+      setIsScrolling(false);
+    }, 800);
+  };
+
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
-      
-      if (isScrolling) return;
-      
-      setIsScrolling(true);
-      
-      if (e.deltaY > 0) {
-        // Scroll down - next poll
-        setCurrentPollIndex((prev) => 
-          prev < randomizedPolls.length - 1 ? prev + 1 : prev
-        );
-      } else {
-        // Scroll up - previous poll
-        setCurrentPollIndex((prev) => 
-          prev > 0 ? prev - 1 : prev
-        );
-      }
-      
-      // Reset scrolling flag after animation
-      scrollTimeoutRef.current = setTimeout(() => {
-        setIsScrolling(false);
-      }, 800);
+      navigatePoll(e.deltaY > 0 ? 'next' : 'prev');
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (isScrolling) return;
-      
       if (e.key === 'ArrowDown' || e.key === ' ') {
         e.preventDefault();
-        setIsScrolling(true);
-        setCurrentPollIndex((prev) => 
-          prev < randomizedPolls.length - 1 ? prev + 1 : prev
-        );
-        scrollTimeoutRef.current = setTimeout(() => {
-          setIsScrolling(false);
-        }, 800);
+        navigatePoll('next');
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
-        setIsScrolling(true);
-        setCurrentPollIndex((prev) => 
-          prev > 0 ? prev - 1 : prev
-        );
-        scrollTimeoutRef.current = setTimeout(() => {
-          setIsScrolling(false);
-        }, 800);
+        navigatePoll('prev');
       }
     };
 
     // Touch event handlers for mobile swiping
     let touchStartY = 0;
-    let touchEndY = 0;
 
     const handleTouchStart = (e: TouchEvent) => {
       touchStartY = e.changedTouches[0].screenY;
     };
 
     const handleTouchEnd = (e: TouchEvent) => {
-      touchEndY = e.changedTouches[0].screenY;
-      
-      if (isScrolling) return;
+      const touchEndY = e.changedTouches[0].screenY;
       
       const swipeThreshold = 50;
       const swipeDistance = touchStartY - touchEndY;
       
       if (Math.abs(swipeDistance) > swipeThreshold) {
-        setIsScrolling(true);
-        
-        if (swipeDistance > 0) {
-          // Swipe up - next poll
-          setCurrentPollIndex((prev) => 
-            prev < randomizedPolls.length - 1 ? prev + 1 : prev
-          );
-        } else {
-          // Swipe down - previous poll
-          setCurrentPollIndex((prev) => 
-            prev > 0 ? prev - 1 : prev
-          );
-        }
-        
-        scrollTimeoutRef.current = setTimeout(() => {
-          setIsScrolling(false);
-        }, 800);
+        navigatePoll(swipeDistance > 0 ? 'next' : 'prev');
       }
     };
 
@@ -134,6 +107,10 @@ const Index = () => {
       }
     };
   }, [isScrolling, randomizedPolls.length]);
+
+  // Handle manual navigation button clicks
+  const handleNextPoll = () => navigatePoll('next');
+  const handlePrevPoll = () => navigatePoll('prev');
 
   return (
     <div 
@@ -185,6 +162,28 @@ const Index = () => {
         ))}
       </div>
 
+      {/* Navigation buttons */}
+      <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-50 flex space-x-4">
+        <button 
+          onClick={handlePrevPoll}
+          disabled={currentPollIndex === 0 || isScrolling}
+          className={`px-6 py-2 rounded-full shadow-lg transition-all duration-300 ${
+            currentPollIndex === 0 ? 'bg-gray-300 cursor-not-allowed' : 'bg-white hover:bg-gray-100 active:scale-95'
+          }`}
+        >
+          Previous
+        </button>
+        <button 
+          onClick={handleNextPoll}
+          disabled={currentPollIndex === randomizedPolls.length - 1 || isScrolling}
+          className={`px-6 py-2 rounded-full shadow-lg transition-all duration-300 ${
+            currentPollIndex === randomizedPolls.length - 1 ? 'bg-gray-300 cursor-not-allowed' : 'bg-white hover:bg-gray-100 active:scale-95'
+          }`}
+        >
+          Next
+        </button>
+      </div>
+
       {/* Scroll Indicator */}
       <ScrollIndicator 
         currentPoll={currentPollIndex} 
@@ -199,14 +198,14 @@ const Index = () => {
               <div className="w-6 h-6 bg-gray-100 rounded border flex items-center justify-center">
                 ↑
               </div>
-              <span>Next</span>
+              <span>Previous</span>
             </div>
             <div className="w-px h-4 bg-gray-300"></div>
             <div className="flex items-center space-x-2">
               <div className="w-6 h-6 bg-gray-100 rounded border flex items-center justify-center">
                 ↓
               </div>
-              <span>Previous</span>
+              <span>Next</span>
             </div>
           </div>
         </div>
