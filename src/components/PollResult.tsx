@@ -76,7 +76,7 @@ const PollResult = ({ poll, selectedOption }: PollResultProps) => {
                 <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
                   <div
                     className={`h-full bg-gradient-to-r ${getCategoryColor(poll.category)} transition-all duration-1000 ease-out ${
-                      animationStep >= 2 ? 'animate-pulse' : ''
+                      animationStep >= 2 && isSelected ? 'animate-pulse' : ''
                     }`}
                     style={{
                       width: animationStep >= 2 ? `${percentage}%` : '0%',

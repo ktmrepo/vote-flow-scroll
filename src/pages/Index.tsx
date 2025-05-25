@@ -17,7 +17,8 @@ const shuffleArray = (array: any[]) => {
 const Index = () => {
   const [randomizedPolls, setRandomizedPolls] = useState(() => shuffleArray(pollData));
   const [currentPollIndex, setCurrentPollIndex] = useState(0);
-  const [votedPolls, setVotedPolls] = useState<number[]>([]);
+  const [votedPolls, setVotedPolls] = useState<Set<number>>(new Set());
+  const [navigationHistory, setNavigationHistory] = useState<number[]>([0]);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Randomize polls on page reload
@@ -25,30 +26,49 @@ const Index = () => {
     setRandomizedPolls(shuffleArray(pollData));
   }, []);
 
+  // Find next unvoted poll or return next poll if all are voted
+  const findNextPoll = (currentIndex: number) => {
+    // First, look for unvoted polls after current index
+    for (let i = currentIndex + 1; i < randomizedPolls.length; i++) {
+      if (!votedPolls.has(i)) {
+        return i;
+      }
+    }
+    
+    // If no unvoted polls after current, look from beginning
+    for (let i = 0; i < currentIndex; i++) {
+      if (!votedPolls.has(i)) {
+        return i;
+      }
+    }
+    
+    // If all polls are voted, just go to next poll
+    return currentIndex < randomizedPolls.length - 1 ? currentIndex + 1 : currentIndex;
+  };
+
   // Function to handle navigation
   const navigatePoll = (direction: 'next' | 'prev') => {
     if (direction === 'next') {
-      setCurrentPollIndex((prev) => 
-        prev < randomizedPolls.length - 1 ? prev + 1 : prev
-      );
+      const nextIndex = findNextPoll(currentPollIndex);
+      if (nextIndex !== currentPollIndex) {
+        setCurrentPollIndex(nextIndex);
+        setNavigationHistory(prev => [...prev, nextIndex]);
+      }
     } else {
-      if (votedPolls.length > 0) {
-        // Find the last voted poll before current index
-        const lastVotedIndex = votedPolls[votedPolls.length - 1];
-        setCurrentPollIndex(lastVotedIndex);
-        // Remove it from voted history so we don't get stuck
-        setVotedPolls(prev => prev.slice(0, -1));
-      } else if (currentPollIndex > 0) {
-        setCurrentPollIndex((prev) => prev - 1);
+      // Go to previous poll in navigation history
+      if (navigationHistory.length > 1) {
+        const newHistory = [...navigationHistory];
+        newHistory.pop(); // Remove current
+        const previousIndex = newHistory[newHistory.length - 1];
+        setCurrentPollIndex(previousIndex);
+        setNavigationHistory(newHistory);
       }
     }
   };
 
   // Handle when user votes on a poll
   const handleVote = (pollIndex: number) => {
-    if (!votedPolls.includes(pollIndex)) {
-      setVotedPolls(prev => [...prev, pollIndex]);
-    }
+    setVotedPolls(prev => new Set([...prev, pollIndex]));
   };
 
   useEffect(() => {
@@ -102,14 +122,14 @@ const Index = () => {
       }
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [randomizedPolls.length, votedPolls]);
+  }, [currentPollIndex, votedPolls, navigationHistory, randomizedPolls.length]);
 
   // Handle manual navigation button clicks
   const handleNextPoll = () => navigatePoll('next');
   const handlePrevPoll = () => navigatePoll('prev');
 
-  const canGoPrevious = votedPolls.length > 0 || currentPollIndex > 0;
-  const canGoNext = currentPollIndex < randomizedPolls.length - 1;
+  const canGoPrevious = navigationHistory.length > 1;
+  const canGoNext = currentPollIndex < randomizedPolls.length - 1 || votedPolls.size < randomizedPolls.length;
 
   return (
     <div 
@@ -162,7 +182,7 @@ const Index = () => {
         ))}
       </div>
 
-      {/* Single row of navigation buttons */}
+      {/* Navigation buttons */}
       <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-50 flex space-x-4">
         <button 
           onClick={handlePrevPoll}
