@@ -2,7 +2,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { pollData } from '@/data/pollData';
 import PollCard from '@/components/PollCard';
-import ScrollIndicator from '@/components/ScrollIndicator';
 
 // Fisher-Yates shuffle algorithm to randomize polls
 const shuffleArray = (array: any[]) => {
@@ -25,6 +24,9 @@ const Index = () => {
   useEffect(() => {
     setRandomizedPolls(shuffleArray(pollData));
   }, []);
+
+  // Check if all polls are voted
+  const allPollsVoted = votedPolls.size === randomizedPolls.length;
 
   // Find next unvoted poll or return next poll if all are voted
   const findNextPoll = (currentIndex: number) => {
@@ -182,6 +184,17 @@ const Index = () => {
         ))}
       </div>
 
+      {/* Completion Message */}
+      {allPollsVoted && (
+        <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-60 bg-white/95 backdrop-blur-md rounded-2xl p-8 shadow-2xl border border-gray-200 max-w-md text-center animate-fade-in">
+          <div className="text-6xl mb-4">🎉</div>
+          <h3 className="text-2xl font-bold text-gray-800 mb-3">You're killing it!</h3>
+          <p className="text-gray-600 text-lg">
+            You've now voted on all the available polls. Check later for more polls.
+          </p>
+        </div>
+      )}
+
       {/* Navigation buttons */}
       <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-50 flex space-x-4">
         <button 
@@ -204,29 +217,11 @@ const Index = () => {
         </button>
       </div>
 
-      {/* Scroll Indicator */}
-      <ScrollIndicator 
-        currentPoll={currentPollIndex} 
-        totalPolls={randomizedPolls.length} 
-      />
-
-      {/* Navigation Hints */}
+      {/* Footer */}
       <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
         <div className="bg-white/90 backdrop-blur-md rounded-full px-6 py-3 shadow-lg border border-gray-200">
-          <div className="flex items-center space-x-4 text-sm text-gray-600">
-            <div className="flex items-center space-x-2">
-              <div className="w-6 h-6 bg-gray-100 rounded border flex items-center justify-center">
-                ↑
-              </div>
-              <span>Next</span>
-            </div>
-            <div className="w-px h-4 bg-gray-300"></div>
-            <div className="flex items-center space-x-2">
-              <div className="w-6 h-6 bg-gray-100 rounded border flex items-center justify-center">
-                ↓
-              </div>
-              <span>Previous</span>
-            </div>
+          <div className="text-sm text-gray-600 text-center">
+            WPCS Poll
           </div>
         </div>
       </div>
