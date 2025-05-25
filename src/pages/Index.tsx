@@ -17,9 +17,8 @@ const shuffleArray = (array: any[]) => {
 const Index = () => {
   const [randomizedPolls, setRandomizedPolls] = useState(() => shuffleArray(pollData));
   const [currentPollIndex, setCurrentPollIndex] = useState(0);
-  const [isScrolling, setIsScrolling] = useState(false);
+  const [votedPolls, setVotedPolls] = useState<number[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
-  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Randomize polls on page reload
   useEffect(() => {
@@ -28,28 +27,28 @@ const Index = () => {
 
   // Function to handle navigation
   const navigatePoll = (direction: 'next' | 'prev') => {
-    if (isScrolling) return;
-    
-    setIsScrolling(true);
-    
     if (direction === 'next') {
       setCurrentPollIndex((prev) => 
         prev < randomizedPolls.length - 1 ? prev + 1 : prev
       );
     } else {
-      setCurrentPollIndex((prev) => 
-        prev > 0 ? prev - 1 : prev
-      );
+      if (votedPolls.length > 0) {
+        // Find the last voted poll before current index
+        const lastVotedIndex = votedPolls[votedPolls.length - 1];
+        setCurrentPollIndex(lastVotedIndex);
+        // Remove it from voted history so we don't get stuck
+        setVotedPolls(prev => prev.slice(0, -1));
+      } else if (currentPollIndex > 0) {
+        setCurrentPollIndex((prev) => prev - 1);
+      }
     }
-    
-    // Reset scrolling flag after animation
-    if (scrollTimeoutRef.current) {
-      clearTimeout(scrollTimeoutRef.current);
+  };
+
+  // Handle when user votes on a poll
+  const handleVote = (pollIndex: number) => {
+    if (!votedPolls.includes(pollIndex)) {
+      setVotedPolls(prev => [...prev, pollIndex]);
     }
-    
-    scrollTimeoutRef.current = setTimeout(() => {
-      setIsScrolling(false);
-    }, 800);
   };
 
   useEffect(() => {
@@ -102,15 +101,15 @@ const Index = () => {
         container.removeEventListener('touchend', handleTouchEnd);
       }
       window.removeEventListener('keydown', handleKeyDown);
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
     };
-  }, [isScrolling, randomizedPolls.length]);
+  }, [randomizedPolls.length, votedPolls]);
 
   // Handle manual navigation button clicks
   const handleNextPoll = () => navigatePoll('next');
   const handlePrevPoll = () => navigatePoll('prev');
+
+  const canGoPrevious = votedPolls.length > 0 || currentPollIndex > 0;
+  const canGoNext = currentPollIndex < randomizedPolls.length - 1;
 
   return (
     <div 
@@ -130,7 +129,7 @@ const Index = () => {
               </h1>
             </div>
             <div className="text-sm text-gray-600">
-              Scroll to explore • Use ↑↓ keys • Swipe on mobile
+              Swipe up for next • Swipe down for previous • Use ↑↓ keys
             </div>
           </div>
         </div>
@@ -157,27 +156,28 @@ const Index = () => {
             <PollCard 
               poll={poll} 
               isActive={index === currentPollIndex}
+              onVote={() => handleVote(index)}
             />
           </div>
         ))}
       </div>
 
-      {/* Navigation buttons */}
+      {/* Single row of navigation buttons */}
       <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-50 flex space-x-4">
         <button 
           onClick={handlePrevPoll}
-          disabled={currentPollIndex === 0 || isScrolling}
+          disabled={!canGoPrevious}
           className={`px-6 py-2 rounded-full shadow-lg transition-all duration-300 ${
-            currentPollIndex === 0 ? 'bg-gray-300 cursor-not-allowed' : 'bg-white hover:bg-gray-100 active:scale-95'
+            !canGoPrevious ? 'bg-gray-300 cursor-not-allowed' : 'bg-white hover:bg-gray-100 active:scale-95'
           }`}
         >
           Previous
         </button>
         <button 
           onClick={handleNextPoll}
-          disabled={currentPollIndex === randomizedPolls.length - 1 || isScrolling}
+          disabled={!canGoNext}
           className={`px-6 py-2 rounded-full shadow-lg transition-all duration-300 ${
-            currentPollIndex === randomizedPolls.length - 1 ? 'bg-gray-300 cursor-not-allowed' : 'bg-white hover:bg-gray-100 active:scale-95'
+            !canGoNext ? 'bg-gray-300 cursor-not-allowed' : 'bg-white hover:bg-gray-100 active:scale-95'
           }`}
         >
           Next
@@ -198,14 +198,14 @@ const Index = () => {
               <div className="w-6 h-6 bg-gray-100 rounded border flex items-center justify-center">
                 ↑
               </div>
-              <span>Previous</span>
+              <span>Next</span>
             </div>
             <div className="w-px h-4 bg-gray-300"></div>
             <div className="flex items-center space-x-2">
               <div className="w-6 h-6 bg-gray-100 rounded border flex items-center justify-center">
                 ↓
               </div>
-              <span>Next</span>
+              <span>Previous</span>
             </div>
           </div>
         </div>

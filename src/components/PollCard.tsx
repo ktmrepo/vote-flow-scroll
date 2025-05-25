@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Poll } from '@/data/pollData';
 import PollResult from './PollResult';
@@ -6,9 +5,10 @@ import PollResult from './PollResult';
 interface PollCardProps {
   poll: Poll;
   isActive: boolean;
+  onVote?: () => void;
 }
 
-const PollCard = ({ poll, isActive }: PollCardProps) => {
+const PollCard = ({ poll, isActive, onVote }: PollCardProps) => {
   const [hasVoted, setHasVoted] = useState(false);
   const [selectedOption, setSelectedOption] = useState<string>('');
 
@@ -22,6 +22,9 @@ const PollCard = ({ poll, isActive }: PollCardProps) => {
       if (option) {
         option.votes += 1;
       }
+      
+      // Notify parent component about the vote
+      onVote?.();
     }
   };
 
@@ -64,7 +67,7 @@ const PollCard = ({ poll, isActive }: PollCardProps) => {
 
         {!hasVoted ? (
           <div className="space-y-4">
-            <p className="text-center text-gray-600 mb-6 text-lg">Cast your vote or scroll to continue:</p>
+            <p className="text-center text-gray-600 mb-6 text-lg">Cast your vote or swipe to continue:</p>
             {poll.options.map((option, index) => (
               <button
                 key={option.id}
@@ -89,7 +92,7 @@ const PollCard = ({ poll, isActive }: PollCardProps) => {
 
         <div className="text-center mt-8">
           <p className="text-sm text-gray-500">
-            Poll {poll.id} of 20 • WPCS Poll
+            WPCS Poll
           </p>
         </div>
       </div>
