@@ -8,7 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Edit, Trash2, Eye, EyeOff } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, EyeOff, BarChart3, Users, TrendingUp } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface Poll {
   id: string;
@@ -32,6 +34,12 @@ const Admin = () => {
   const [polls, setPolls] = useState<Poll[]>([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingPoll, setEditingPoll] = useState<Poll | null>(null);
+  const [analytics, setAnalytics] = useState({
+    totalPolls: 0,
+    totalVotes: 0,
+    activePolls: 0,
+    totalUsers: 0
+  });
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -47,13 +55,14 @@ const Admin = () => {
   useEffect(() => {
     if (user && isAdmin) {
       fetchPolls();
+      fetchAnalytics();
     }
   }, [user, isAdmin]);
 
   const fetchPolls = async () => {
     try {
       const { data, error } = await supabase
-        .from('polls')
+        .from('polls' as any)
         .select('*')
         .order('created_at', { ascending: false });
 
@@ -65,6 +74,40 @@ const Admin = () => {
         description: error.message,
         variant: "destructive",
       });
+    }
+  };
+
+  const fetchAnalytics = async () => {
+    try {
+      // Fetch total polls
+      const { count: pollCount } = await supabase
+        .from('polls' as any)
+        .select('*', { count: 'exact', head: true });
+
+      // Fetch active polls
+      const { count: activePollCount } = await supabase
+        .from('polls' as any)
+        .select('*', { count: 'exact', head: true })
+        .eq('is_active', true);
+
+      // Fetch total votes
+      const { count: voteCount } = await supabase
+        .from('votes' as any)
+        .select('*', { count: 'exact', head: true });
+
+      // Fetch total users
+      const { count: userCount } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true });
+
+      setAnalytics({
+        totalPolls: pollCount || 0,
+        totalVotes: voteCount || 0,
+        activePolls: activePollCount || 0,
+        totalUsers: userCount || 0
+      });
+    } catch (error: any) {
+      console.error('Error fetching analytics:', error);
     }
   };
 
@@ -92,7 +135,7 @@ const Admin = () => {
     try {
       if (editingPoll) {
         const { error } = await supabase
-          .from('polls')
+          .from('polls' as any)
           .update({
             title: formData.title,
             description: formData.description,
@@ -104,7 +147,7 @@ const Admin = () => {
         toast({ title: "Poll updated successfully!" });
       } else {
         const { error } = await supabase
-          .from('polls')
+          .from('polls' as any)
           .insert({
             title: formData.title,
             description: formData.description,
@@ -120,6 +163,7 @@ const Admin = () => {
       setShowCreateForm(false);
       setEditingPoll(null);
       fetchPolls();
+      fetchAnalytics();
     } catch (error: any) {
       toast({
         title: "Error saving poll",
@@ -132,7 +176,7 @@ const Admin = () => {
   const togglePollStatus = async (poll: Poll) => {
     try {
       const { error } = await supabase
-        .from('polls')
+        .from('polls' as any)
         .update({ is_active: !poll.is_active })
         .eq('id', poll.id);
 
@@ -142,6 +186,7 @@ const Admin = () => {
         title: `Poll ${!poll.is_active ? 'activated' : 'deactivated'}`,
       });
       fetchPolls();
+      fetchAnalytics();
     } catch (error: any) {
       toast({
         title: "Error updating poll",
@@ -156,7 +201,7 @@ const Admin = () => {
 
     try {
       const { error } = await supabase
-        .from('polls')
+        .from('polls' as any)
         .delete()
         .eq('id', pollId);
 
@@ -164,6 +209,7 @@ const Admin = () => {
       
       toast({ title: "Poll deleted successfully" });
       fetchPolls();
+      fetchAnalytics();
     } catch (error: any) {
       toast({
         title: "Error deleting poll",
@@ -214,119 +260,208 @@ const Admin = () => {
           </div>
         </div>
 
-        {showCreateForm && (
-          <div className="bg-white rounded-lg shadow p-6 mb-8">
-            <h2 className="text-xl font-semibold mb-4">
-              {editingPoll ? 'Edit Poll' : 'Create New Poll'}
-            </h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label htmlFor="title">Title</Label>
-                <Input
-                  id="title"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label>Options</Label>
-                {formData.options.map((option, index) => (
-                  <Input
-                    key={index}
-                    placeholder={`Option ${index + 1}`}
-                    value={option}
-                    onChange={(e) => {
-                      const newOptions = [...formData.options];
-                      newOptions[index] = e.target.value;
-                      setFormData({ ...formData, options: newOptions });
-                    }}
-                    className="mt-2"
-                    required={index < 2}
-                  />
-                ))}
-              </div>
-              <div className="flex space-x-4">
-                <Button type="submit" className="bg-green-600 hover:bg-green-700">
-                  {editingPoll ? 'Update Poll' : 'Create Poll'}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setShowCreateForm(false);
-                    setEditingPoll(null);
-                  }}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </div>
-        )}
+        <Tabs defaultValue="overview" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="polls">Manage Polls</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          </TabsList>
 
-        <div className="bg-white rounded-lg shadow">
-          <div className="p-6 border-b">
-            <h2 className="text-xl font-semibold">Manage Polls</h2>
-          </div>
-          <div className="divide-y">
-            {polls.map((poll) => (
-              <div key={poll.id} className="p-6 flex justify-between items-start">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <h3 className="text-lg font-medium">{poll.title}</h3>
-                    <span className={`px-2 py-1 rounded text-xs ${
-                      poll.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    }`}>
-                      {poll.is_active ? 'Active' : 'Inactive'}
-                    </span>
+          <TabsContent value="overview">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Polls</CardTitle>
+                  <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{analytics.totalPolls}</div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Active Polls</CardTitle>
+                  <Eye className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{analytics.activePolls}</div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Votes</CardTitle>
+                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{analytics.totalVotes}</div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{analytics.totalUsers}</div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="polls">
+            {showCreateForm && (
+              <div className="bg-white rounded-lg shadow p-6 mb-8">
+                <h2 className="text-xl font-semibold mb-4">
+                  {editingPoll ? 'Edit Poll' : 'Create New Poll'}
+                </h2>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div>
+                    <Label htmlFor="title">Title</Label>
+                    <Input
+                      id="title"
+                      value={formData.title}
+                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      required
+                    />
                   </div>
-                  <p className="text-gray-600 mb-2">{poll.description}</p>
-                  <div className="text-sm text-gray-500">
-                    {poll.options.length} options • Created {new Date(poll.created_at).toLocaleDateString()}
+                  <div>
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea
+                      id="description"
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    />
                   </div>
-                </div>
-                <div className="flex space-x-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => togglePollStatus(poll)}
-                  >
-                    {poll.is_active ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => startEdit(poll)}
-                  >
-                    <Edit className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => deletePoll(poll.id)}
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            ))}
-            {polls.length === 0 && (
-              <div className="p-6 text-center text-gray-500">
-                No polls created yet. Create your first poll!
+                  <div>
+                    <Label>Options</Label>
+                    {formData.options.map((option, index) => (
+                      <Input
+                        key={index}
+                        placeholder={`Option ${index + 1}`}
+                        value={option}
+                        onChange={(e) => {
+                          const newOptions = [...formData.options];
+                          newOptions[index] = e.target.value;
+                          setFormData({ ...formData, options: newOptions });
+                        }}
+                        className="mt-2"
+                        required={index < 2}
+                      />
+                    ))}
+                  </div>
+                  <div className="flex space-x-4">
+                    <Button type="submit" className="bg-green-600 hover:bg-green-700">
+                      {editingPoll ? 'Update Poll' : 'Create Poll'}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setShowCreateForm(false);
+                        setEditingPoll(null);
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </form>
               </div>
             )}
-          </div>
-        </div>
+
+            <div className="bg-white rounded-lg shadow">
+              <div className="p-6 border-b">
+                <h2 className="text-xl font-semibold">Manage Polls</h2>
+              </div>
+              <div className="divide-y">
+                {polls.map((poll) => (
+                  <div key={poll.id} className="p-6 flex justify-between items-start">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <h3 className="text-lg font-medium">{poll.title}</h3>
+                        <span className={`px-2 py-1 rounded text-xs ${
+                          poll.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        }`}>
+                          {poll.is_active ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+                      <p className="text-gray-600 mb-2">{poll.description}</p>
+                      <div className="text-sm text-gray-500">
+                        {poll.options.length} options • Created {new Date(poll.created_at).toLocaleDateString()}
+                      </div>
+                    </div>
+                    <div className="flex space-x-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => togglePollStatus(poll)}
+                      >
+                        {poll.is_active ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => startEdit(poll)}
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => deletePoll(poll.id)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                {polls.length === 0 && (
+                  <div className="p-6 text-center text-gray-500">
+                    No polls created yet. Create your first poll!
+                  </div>
+                )}
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="analytics">
+            <Card>
+              <CardHeader>
+                <CardTitle>Poll Analytics</CardTitle>
+                <CardDescription>
+                  Detailed statistics about your polls and user engagement
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <h3 className="text-lg font-semibold">Poll Performance</h3>
+                      <p className="text-sm text-gray-600">
+                        Average votes per poll: {polls.length > 0 ? Math.round(analytics.totalVotes / polls.length) : 0}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        Active poll ratio: {polls.length > 0 ? Math.round((analytics.activePolls / analytics.totalPolls) * 100) : 0}%
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="text-lg font-semibold">User Engagement</h3>
+                      <p className="text-sm text-gray-600">
+                        Average votes per user: {analytics.totalUsers > 0 ? Math.round(analytics.totalVotes / analytics.totalUsers) : 0}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        Total registered users: {analytics.totalUsers}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

@@ -51,6 +51,14 @@ const PollCard = ({ poll, isActive, onVote }: PollCardProps) => {
     votes: votes[option.id] || 0
   }));
 
+  // Create poll object compatible with PollResult component
+  const pollForResult = {
+    id: poll.id,
+    question: poll.title,
+    category: 'Poll',
+    options: optionsWithVotes
+  };
+
   return (
     <div className={`min-h-screen flex items-center justify-center p-4 transition-all duration-700 ${
       isActive ? 'opacity-100 scale-100' : 'opacity-70 scale-95'
@@ -97,10 +105,7 @@ const PollCard = ({ poll, isActive, onVote }: PollCardProps) => {
           </div>
         ) : (
           <PollResult 
-            poll={{ 
-              ...poll, 
-              options: optionsWithVotes 
-            }} 
+            poll={pollForResult} 
             selectedOption={userVote || ''} 
           />
         )}

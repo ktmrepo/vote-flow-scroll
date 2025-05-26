@@ -27,7 +27,7 @@ export const usePolls = () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('polls')
+        .from('polls' as any)
         .select('*')
         .eq('is_active', true)
         .order('created_at', { ascending: false });
