@@ -1,6 +1,7 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { pollData } from '@/data/pollData';
+import { usePolls } from '@/hooks/usePolls';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import PollCard from '@/components/PollCard';
@@ -16,27 +17,33 @@ const shuffleArray = (array: any[]) => {
 };
 
 const Index = () => {
-  const { user, signOut, loading } = useAuth();
+  const { user, signOut, loading: authLoading, isAdmin } = useAuth();
+  const { polls, loading: pollsLoading, refetch } = usePolls();
   const navigate = useNavigate();
   
   // State variables
-  const [randomizedPolls, setRandomizedPolls] = useState(() => shuffleArray(pollData));
+  const [randomizedPolls, setRandomizedPolls] = useState(() => shuffleArray(polls));
   const [currentPollIndex, setCurrentPollIndex] = useState(0);
   const [votedPolls, setVotedPolls] = useState<Set<number>>(new Set());
   const [navigationHistory, setNavigationHistory] = useState<number[]>([0]);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Randomize polls on page reload
+  // Randomize polls when polls data changes
   useEffect(() => {
-    setRandomizedPolls(shuffleArray(pollData));
-  }, []);
+    if (polls.length > 0) {
+      setRandomizedPolls(shuffleArray(polls));
+      setCurrentPollIndex(0);
+      setVotedPolls(new Set());
+      setNavigationHistory([0]);
+    }
+  }, [polls]);
 
   // Redirect to auth if not logged in
   useEffect(() => {
-    if (!loading && !user) {
+    if (!authLoading && !user) {
       navigate('/auth');
     }
-  }, [user, loading, navigate]);
+  }, [user, authLoading, navigate]);
 
   // Check if all polls are voted
   const allPollsVoted = votedPolls.size === randomizedPolls.length;
@@ -121,7 +128,7 @@ const Index = () => {
     };
 
     const container = containerRef.current;
-    if (container) {
+    if (container && randomizedPolls.length > 0) {
       container.addEventListener('wheel', handleWheel, { passive: false });
       container.addEventListener('touchstart', handleTouchStart, { passive: true });
       container.addEventListener('touchend', handleTouchEnd, { passive: true });
@@ -146,7 +153,7 @@ const Index = () => {
   const canGoPrevious = navigationHistory.length > 1;
   const canGoNext = currentPollIndex < randomizedPolls.length - 1 || votedPolls.size < randomizedPolls.length;
 
-  if (loading) {
+  if (authLoading || pollsLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 flex items-center justify-center">
         <div className="text-center">
@@ -154,6 +161,25 @@ const Index = () => {
             <span className="text-white font-bold text-xl">W</span>
           </div>
           <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (randomizedPolls.length === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-4">
+            <span className="text-white font-bold text-xl">W</span>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">No Active Polls</h2>
+          <p className="text-gray-600 mb-6">There are currently no active polls to vote on.</p>
+          {isAdmin && (
+            <Button onClick={() => navigate('/admin')} className="bg-blue-600 hover:bg-blue-700">
+              Go to Admin Panel
+            </Button>
+          )}
         </div>
       </div>
     );
@@ -185,6 +211,16 @@ const Index = () => {
                   <span className="text-sm text-gray-600">
                     Welcome, {user.email}
                   </span>
+                  {isAdmin && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigate('/admin')}
+                      className="text-sm"
+                    >
+                      Admin Panel
+                    </Button>
+                  )}
                   <Button
                     variant="outline"
                     size="sm"
