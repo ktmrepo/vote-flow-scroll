@@ -1,6 +1,8 @@
-
 import { useState, useEffect, useRef } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { pollData } from '@/data/pollData';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
 import PollCard from '@/components/PollCard';
 
 // Fisher-Yates shuffle algorithm to randomize polls
@@ -14,6 +16,10 @@ const shuffleArray = (array: any[]) => {
 };
 
 const Index = () => {
+  const { user, signOut, loading } = useAuth();
+  const navigate = useNavigate();
+  
+  // State variables
   const [randomizedPolls, setRandomizedPolls] = useState(() => shuffleArray(pollData));
   const [currentPollIndex, setCurrentPollIndex] = useState(0);
   const [votedPolls, setVotedPolls] = useState<Set<number>>(new Set());
@@ -24,6 +30,13 @@ const Index = () => {
   useEffect(() => {
     setRandomizedPolls(shuffleArray(pollData));
   }, []);
+
+  // Redirect to auth if not logged in
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/auth');
+    }
+  }, [user, loading, navigate]);
 
   // Check if all polls are voted
   const allPollsVoted = votedPolls.size === randomizedPolls.length;
@@ -133,6 +146,19 @@ const Index = () => {
   const canGoPrevious = navigationHistory.length > 1;
   const canGoNext = currentPollIndex < randomizedPolls.length - 1 || votedPolls.size < randomizedPolls.length;
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-4 animate-pulse">
+            <span className="text-white font-bold text-xl">W</span>
+          </div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div 
       ref={containerRef}
@@ -150,8 +176,25 @@ const Index = () => {
                 WPCS Poll
               </h1>
             </div>
-            <div className="text-sm text-gray-600">
-              Swipe up for next • Swipe down for previous • Use ↑↓ keys
+            <div className="flex items-center space-x-4">
+              <div className="text-sm text-gray-600 hidden md:block">
+                Swipe up for next • Swipe down for previous • Use ↑↓ keys
+              </div>
+              {user && (
+                <div className="flex items-center space-x-3">
+                  <span className="text-sm text-gray-600">
+                    Welcome, {user.email}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={signOut}
+                    className="text-sm"
+                  >
+                    Sign Out
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         </div>
