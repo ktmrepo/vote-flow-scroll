@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -62,7 +61,7 @@ const Admin = () => {
   const fetchPolls = async () => {
     try {
       const { data, error } = await supabase
-        .from('polls' as any)
+        .from('polls')
         .select('*')
         .order('created_at', { ascending: false });
 
@@ -81,18 +80,18 @@ const Admin = () => {
     try {
       // Fetch total polls
       const { count: pollCount } = await supabase
-        .from('polls' as any)
+        .from('polls')
         .select('*', { count: 'exact', head: true });
 
       // Fetch active polls
       const { count: activePollCount } = await supabase
-        .from('polls' as any)
+        .from('polls')
         .select('*', { count: 'exact', head: true })
         .eq('is_active', true);
 
       // Fetch total votes
       const { count: voteCount } = await supabase
-        .from('votes' as any)
+        .from('votes')
         .select('*', { count: 'exact', head: true });
 
       // Fetch total users
@@ -135,7 +134,7 @@ const Admin = () => {
     try {
       if (editingPoll) {
         const { error } = await supabase
-          .from('polls' as any)
+          .from('polls')
           .update({
             title: formData.title,
             description: formData.description,
@@ -147,7 +146,7 @@ const Admin = () => {
         toast({ title: "Poll updated successfully!" });
       } else {
         const { error } = await supabase
-          .from('polls' as any)
+          .from('polls')
           .insert({
             title: formData.title,
             description: formData.description,
@@ -176,7 +175,7 @@ const Admin = () => {
   const togglePollStatus = async (poll: Poll) => {
     try {
       const { error } = await supabase
-        .from('polls' as any)
+        .from('polls')
         .update({ is_active: !poll.is_active })
         .eq('id', poll.id);
 
@@ -201,7 +200,7 @@ const Admin = () => {
 
     try {
       const { error } = await supabase
-        .from('polls' as any)
+        .from('polls')
         .delete()
         .eq('id', pollId);
 

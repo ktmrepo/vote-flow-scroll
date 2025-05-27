@@ -16,7 +16,7 @@ export const useVotes = (pollId?: string) => {
 
     try {
       const { data, error } = await supabase
-        .from('votes' as any)
+        .from('votes')
         .select('option_id')
         .eq('poll_id', pollId)
         .eq('user_id', user.id)
@@ -34,14 +34,14 @@ export const useVotes = (pollId?: string) => {
 
     try {
       const { data, error } = await supabase
-        .from('votes' as any)
+        .from('votes')
         .select('option_id')
         .eq('poll_id', pollId);
 
       if (error) throw error;
       
       const voteCounts: Record<string, number> = {};
-      data?.forEach((vote: any) => {
+      data?.forEach((vote) => {
         voteCounts[vote.option_id] = (voteCounts[vote.option_id] || 0) + 1;
       });
       
@@ -67,7 +67,7 @@ export const useVotes = (pollId?: string) => {
       if (userVote) {
         // Update existing vote
         const { error } = await supabase
-          .from('votes' as any)
+          .from('votes')
           .update({ option_id: optionId })
           .eq('poll_id', pollId)
           .eq('user_id', user.id);
@@ -76,7 +76,7 @@ export const useVotes = (pollId?: string) => {
       } else {
         // Insert new vote
         const { error } = await supabase
-          .from('votes' as any)
+          .from('votes')
           .insert({
             poll_id: pollId,
             user_id: user.id,

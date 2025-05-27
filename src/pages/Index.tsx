@@ -1,10 +1,10 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { usePolls } from '@/hooks/usePolls';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import PollCard from '@/components/PollCard';
+import { User, Plus } from 'lucide-react';
 
 // Fisher-Yates shuffle algorithm to randomize polls
 const shuffleArray = (array: any[]) => {
@@ -175,11 +175,17 @@ const Index = () => {
           </div>
           <h2 className="text-2xl font-bold text-gray-800 mb-4">No Active Polls</h2>
           <p className="text-gray-600 mb-6">There are currently no active polls to vote on.</p>
-          {isAdmin && (
-            <Button onClick={() => navigate('/admin')} className="bg-blue-600 hover:bg-blue-700">
-              Go to Admin Panel
+          <div className="space-x-4">
+            <Button onClick={() => navigate('/submit')} className="bg-blue-600 hover:bg-blue-700">
+              <Plus className="w-4 h-4 mr-2" />
+              Submit a Poll
             </Button>
-          )}
+            {isAdmin && (
+              <Button onClick={() => navigate('/admin')} variant="outline">
+                Admin Panel
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -208,9 +214,24 @@ const Index = () => {
               </div>
               {user && (
                 <div className="flex items-center space-x-3">
-                  <span className="text-sm text-gray-600">
-                    Welcome, {user.email}
-                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate('/submit')}
+                    className="text-sm"
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Submit Poll
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate('/profile')}
+                    className="text-sm"
+                  >
+                    <User className="w-4 h-4 mr-1" />
+                    Profile
+                  </Button>
                   {isAdmin && (
                     <Button
                       variant="outline"

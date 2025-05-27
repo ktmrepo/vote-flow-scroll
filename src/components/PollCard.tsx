@@ -51,9 +51,9 @@ const PollCard = ({ poll, isActive, onVote }: PollCardProps) => {
     votes: votes[option.id] || 0
   }));
 
-  // Create poll object compatible with PollResult component
+  // Create poll object compatible with PollResult component - convert string id to number
   const pollForResult = {
-    id: poll.id,
+    id: parseInt(poll.id.replace(/-/g, '').substring(0, 8), 16), // Convert UUID to number for compatibility
     question: poll.title,
     category: 'Poll',
     options: optionsWithVotes
