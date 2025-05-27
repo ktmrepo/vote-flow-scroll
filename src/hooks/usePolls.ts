@@ -6,7 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 export interface DatabasePoll {
   id: string;
   title: string;
-  description: string;
+  description: string | null;
   options: Array<{
     id: string;
     text: string;
@@ -16,8 +16,8 @@ export interface DatabasePoll {
   is_active: boolean;
   created_at: string;
   created_by: string;
-  category: string;
-  tags: string[];
+  category: string | null;
+  tags: string[] | null;
 }
 
 export const usePolls = () => {
@@ -38,7 +38,14 @@ export const usePolls = () => {
       
       const pollsWithTypedOptions = data?.map(poll => ({
         ...poll,
-        options: Array.isArray(poll.options) ? poll.options : []
+        options: Array.isArray(poll.options) ? poll.options as Array<{
+          id: string;
+          text: string;
+          votes: number;
+          color: string;
+        }> : [],
+        category: poll.category || 'General',
+        tags: poll.tags || []
       })) || [];
       
       setPolls(pollsWithTypedOptions);
