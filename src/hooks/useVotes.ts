@@ -96,6 +96,7 @@ export const useVotes = (pollId?: string) => {
       
       return true;
     } catch (error: any) {
+      console.error('Error casting vote:', error);
       toast({
         title: "Error casting vote",
         description: error.message,

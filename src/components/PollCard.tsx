@@ -29,20 +29,23 @@ const PollCard = ({ poll, isActive, onVote }: PollCardProps) => {
   };
 
   const getCategoryColor = () => {
-    // Simple color mapping based on poll title
-    const title = poll.title.toLowerCase();
-    if (title.includes('programming') || title.includes('tech')) return 'bg-blue-500';
-    if (title.includes('framework') || title.includes('frontend')) return 'bg-green-500';
-    if (title.includes('coffee') || title.includes('food')) return 'bg-yellow-500';
-    return 'bg-purple-500';
+    const category = poll.category?.toLowerCase() || '';
+    if (category.includes('technology') || category.includes('tech')) return 'bg-blue-500';
+    if (category.includes('food') || category.includes('drink')) return 'bg-yellow-500';
+    if (category.includes('entertainment') || category.includes('gaming')) return 'bg-purple-500';
+    if (category.includes('health') || category.includes('fitness')) return 'bg-green-500';
+    if (category.includes('education') || category.includes('learning')) return 'bg-indigo-500';
+    return 'bg-gray-500';
   };
 
   const getCategoryGradient = () => {
-    const title = poll.title.toLowerCase();
-    if (title.includes('programming') || title.includes('tech')) return 'from-blue-50 to-blue-100';
-    if (title.includes('framework') || title.includes('frontend')) return 'from-green-50 to-green-100';
-    if (title.includes('coffee') || title.includes('food')) return 'from-yellow-50 to-yellow-100';
-    return 'from-purple-50 to-purple-100';
+    const category = poll.category?.toLowerCase() || '';
+    if (category.includes('technology') || category.includes('tech')) return 'from-blue-50 to-blue-100';
+    if (category.includes('food') || category.includes('drink')) return 'from-yellow-50 to-yellow-100';
+    if (category.includes('entertainment') || category.includes('gaming')) return 'from-purple-50 to-purple-100';
+    if (category.includes('health') || category.includes('fitness')) return 'from-green-50 to-green-100';
+    if (category.includes('education') || category.includes('learning')) return 'from-indigo-50 to-indigo-100';
+    return 'from-gray-50 to-gray-100';
   };
 
   // Merge database votes with poll options
@@ -51,11 +54,11 @@ const PollCard = ({ poll, isActive, onVote }: PollCardProps) => {
     votes: votes[option.id] || 0
   }));
 
-  // Create poll object compatible with PollResult component - convert string id to number
+  // Create poll object compatible with PollResult component
   const pollForResult = {
     id: parseInt(poll.id.replace(/-/g, '').substring(0, 8), 16), // Convert UUID to number for compatibility
     question: poll.title,
-    category: 'Poll',
+    category: poll.category as "Politics" | "Celebrity" | "Scientists" | "Geography", // Type assertion for compatibility
     options: optionsWithVotes
   };
 
@@ -68,7 +71,7 @@ const PollCard = ({ poll, isActive, onVote }: PollCardProps) => {
       }`}>
         <div className="text-center mb-8">
           <div className={`inline-block px-4 py-2 ${getCategoryColor()} text-white rounded-full text-sm font-semibold mb-4 transform transition-all duration-300 hover:scale-105`}>
-            Poll
+            {poll.category}
           </div>
           <h2 className="text-3xl font-bold text-gray-800 mb-2 leading-tight">
             {poll.title}

@@ -16,6 +16,8 @@ export interface DatabasePoll {
   is_active: boolean;
   created_at: string;
   created_by: string;
+  category: string;
+  tags: string[];
 }
 
 export const usePolls = () => {
@@ -33,8 +35,15 @@ export const usePolls = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setPolls(data || []);
+      
+      const pollsWithTypedOptions = data?.map(poll => ({
+        ...poll,
+        options: Array.isArray(poll.options) ? poll.options : []
+      })) || [];
+      
+      setPolls(pollsWithTypedOptions);
     } catch (error: any) {
+      console.error('Error fetching polls:', error);
       toast({
         title: "Error fetching polls",
         description: error.message,

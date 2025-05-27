@@ -1,329 +1,236 @@
-import { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { usePolls } from '@/hooks/usePolls';
-import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import PollCard from '@/components/PollCard';
-import { User, Plus } from 'lucide-react';
 
-// Fisher-Yates shuffle algorithm to randomize polls
-const shuffleArray = (array: any[]) => {
-  const shuffled = [...array];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled;
-};
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { usePolls } from '@/hooks/usePolls';
+import PollCard from '@/components/PollCard';
+import ScrollIndicator from '@/components/ScrollIndicator';
+import UserDashboard from '@/components/UserDashboard';
+import { Button } from '@/components/ui/button';
+import { LogIn, UserPlus, Menu, X } from 'lucide-react';
 
 const Index = () => {
-  const { user, signOut, loading: authLoading, isAdmin } = useAuth();
-  const { polls, loading: pollsLoading, refetch } = usePolls();
-  const navigate = useNavigate();
-  
-  // State variables
-  const [randomizedPolls, setRandomizedPolls] = useState(() => shuffleArray(polls));
   const [currentPollIndex, setCurrentPollIndex] = useState(0);
-  const [votedPolls, setVotedPolls] = useState<Set<number>>(new Set());
-  const [navigationHistory, setNavigationHistory] = useState<number[]>([0]);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [showUserPanel, setShowUserPanel] = useState(false);
+  const { polls, loading } = usePolls();
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
-  // Randomize polls when polls data changes
-  useEffect(() => {
-    if (polls.length > 0) {
-      setRandomizedPolls(shuffleArray(polls));
-      setCurrentPollIndex(0);
-      setVotedPolls(new Set());
-      setNavigationHistory([0]);
-    }
-  }, [polls]);
-
-  // Redirect to auth if not logged in
-  useEffect(() => {
-    if (!authLoading && !user) {
-      navigate('/auth');
-    }
-  }, [user, authLoading, navigate]);
-
-  // Check if all polls are voted
-  const allPollsVoted = votedPolls.size === randomizedPolls.length;
-
-  // Find next unvoted poll or return next poll if all are voted
-  const findNextPoll = (currentIndex: number) => {
-    // First, look for unvoted polls after current index
-    for (let i = currentIndex + 1; i < randomizedPolls.length; i++) {
-      if (!votedPolls.has(i)) {
-        return i;
-      }
-    }
-    
-    // If no unvoted polls after current, look from beginning
-    for (let i = 0; i < currentIndex; i++) {
-      if (!votedPolls.has(i)) {
-        return i;
-      }
-    }
-    
-    // If all polls are voted, just go to next poll
-    return currentIndex < randomizedPolls.length - 1 ? currentIndex + 1 : currentIndex;
-  };
-
-  // Function to handle navigation
-  const navigatePoll = (direction: 'next' | 'prev') => {
-    if (direction === 'next') {
-      const nextIndex = findNextPoll(currentPollIndex);
-      if (nextIndex !== currentPollIndex) {
-        setCurrentPollIndex(nextIndex);
-        setNavigationHistory(prev => [...prev, nextIndex]);
-      }
-    } else {
-      // Go to previous poll in navigation history
-      if (navigationHistory.length > 1) {
-        const newHistory = [...navigationHistory];
-        newHistory.pop(); // Remove current
-        const previousIndex = newHistory[newHistory.length - 1];
-        setCurrentPollIndex(previousIndex);
-        setNavigationHistory(newHistory);
-      }
+  const nextPoll = () => {
+    if (currentPollIndex < polls.length - 1) {
+      setCurrentPollIndex(currentPollIndex + 1);
     }
   };
 
-  // Handle when user votes on a poll
-  const handleVote = (pollIndex: number) => {
-    setVotedPolls(prev => new Set([...prev, pollIndex]));
+  const prevPoll = () => {
+    if (currentPollIndex > 0) {
+      setCurrentPollIndex(currentPollIndex - 1);
+    }
   };
 
-  useEffect(() => {
-    const handleWheel = (e: WheelEvent) => {
-      e.preventDefault();
-      navigatePoll(e.deltaY > 0 ? 'next' : 'prev');
-    };
+  const handleVote = () => {
+    // Automatically move to next poll after voting
+    setTimeout(() => {
+      nextPoll();
+    }, 2000);
+  };
 
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowDown' || e.key === ' ') {
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight' || e.key === ' ') {
         e.preventDefault();
-        navigatePoll('next');
-      } else if (e.key === 'ArrowUp') {
+        nextPoll();
+      } else if (e.key === 'ArrowLeft') {
         e.preventDefault();
-        navigatePoll('prev');
+        prevPoll();
       }
     };
 
-    // Touch event handlers for mobile swiping
-    let touchStartY = 0;
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [currentPollIndex, polls.length]);
+
+  // Touch/swipe navigation
+  useEffect(() => {
+    let touchStartX = 0;
+    let touchEndX = 0;
 
     const handleTouchStart = (e: TouchEvent) => {
-      touchStartY = e.changedTouches[0].screenY;
+      touchStartX = e.changedTouches[0].screenX;
     };
 
     const handleTouchEnd = (e: TouchEvent) => {
-      const touchEndY = e.changedTouches[0].screenY;
-      
+      touchEndX = e.changedTouches[0].screenX;
+      handleSwipe();
+    };
+
+    const handleSwipe = () => {
       const swipeThreshold = 50;
-      const swipeDistance = touchStartY - touchEndY;
-      
+      const swipeDistance = touchStartX - touchEndX;
+
       if (Math.abs(swipeDistance) > swipeThreshold) {
-        navigatePoll(swipeDistance > 0 ? 'next' : 'prev');
+        if (swipeDistance > 0) {
+          nextPoll();
+        } else {
+          prevPoll();
+        }
       }
     };
 
-    const container = containerRef.current;
-    if (container && randomizedPolls.length > 0) {
-      container.addEventListener('wheel', handleWheel, { passive: false });
-      container.addEventListener('touchstart', handleTouchStart, { passive: true });
-      container.addEventListener('touchend', handleTouchEnd, { passive: true });
-    }
-    
-    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('touchstart', handleTouchStart);
+    window.addEventListener('touchend', handleTouchEnd);
 
     return () => {
-      if (container) {
-        container.removeEventListener('wheel', handleWheel);
-        container.removeEventListener('touchstart', handleTouchStart);
-        container.removeEventListener('touchend', handleTouchEnd);
-      }
-      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [currentPollIndex, votedPolls, navigationHistory, randomizedPolls.length]);
+  }, [currentPollIndex, polls.length]);
 
-  // Handle manual navigation button clicks
-  const handleNextPoll = () => navigatePoll('next');
-  const handlePrevPoll = () => navigatePoll('prev');
-
-  const canGoPrevious = navigationHistory.length > 1;
-  const canGoNext = currentPollIndex < randomizedPolls.length - 1 || votedPolls.size < randomizedPolls.length;
-
-  if (authLoading || pollsLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-4 animate-pulse">
-            <span className="text-white font-bold text-xl">W</span>
-          </div>
-          <p className="text-gray-600">Loading...</p>
+          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading polls...</p>
         </div>
       </div>
     );
   }
 
-  if (randomizedPolls.length === 0) {
+  if (polls.length === 0) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-4">
-            <span className="text-white font-bold text-xl">W</span>
-          </div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">No Active Polls</h2>
-          <p className="text-gray-600 mb-6">There are currently no active polls to vote on.</p>
-          <div className="space-x-4">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">No polls available</h2>
+          <p className="text-gray-600 mb-8">Check back later for new polls!</p>
+          {user && (
             <Button onClick={() => navigate('/submit')} className="bg-blue-600 hover:bg-blue-700">
-              <Plus className="w-4 h-4 mr-2" />
               Submit a Poll
             </Button>
-            {isAdmin && (
-              <Button onClick={() => navigate('/admin')} variant="outline">
-                Admin Panel
-              </Button>
-            )}
-          </div>
+          )}
         </div>
       </div>
     );
   }
 
   return (
-    <div 
-      ref={containerRef}
-      className="relative overflow-hidden bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50"
-    >
-      {/* Header */}
-      <div className="fixed top-0 left-0 right-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-200">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">W</span>
-              </div>
+    <div className="flex min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50">
+      {/* User Dashboard Sidebar */}
+      {user && showUserPanel && (
+        <div className="fixed inset-0 z-50 lg:relative lg:inset-auto">
+          <div className="lg:hidden absolute inset-0 bg-black bg-opacity-50" onClick={() => setShowUserPanel(false)} />
+          <div className="relative bg-white h-full overflow-y-auto">
+            <UserDashboard />
+          </div>
+        </div>
+      )}
+
+      {/* Main Content */}
+      <div className="flex-1 relative">
+        {/* Header */}
+        <div className="absolute top-0 left-0 right-0 z-40 p-6">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center space-x-4">
+              {user && (
+                <Button
+                  onClick={() => setShowUserPanel(!showUserPanel)}
+                  variant="outline"
+                  size="sm"
+                  className="bg-white/80 backdrop-blur-sm"
+                >
+                  {showUserPanel ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+                </Button>
+              )}
               <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 WPCS Poll
               </h1>
             </div>
-            <div className="flex items-center space-x-4">
-              <div className="text-sm text-gray-600 hidden md:block">
-                Swipe up for next • Swipe down for previous • Use ↑↓ keys
+            
+            {!user ? (
+              <div className="flex space-x-2">
+                <Button
+                  onClick={() => navigate('/auth')}
+                  variant="outline"
+                  size="sm"
+                  className="bg-white/80 backdrop-blur-sm"
+                >
+                  <LogIn className="w-4 h-4 mr-2" />
+                  Sign In
+                </Button>
+                <Button
+                  onClick={() => navigate('/auth')}
+                  size="sm"
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Sign Up
+                </Button>
               </div>
-              {user && (
-                <div className="flex items-center space-x-3">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => navigate('/submit')}
-                    className="text-sm"
-                  >
-                    <Plus className="w-4 h-4 mr-1" />
-                    Submit Poll
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => navigate('/profile')}
-                    className="text-sm"
-                  >
-                    <User className="w-4 h-4 mr-1" />
-                    Profile
-                  </Button>
-                  {isAdmin && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => navigate('/admin')}
-                      className="text-sm"
-                    >
-                      Admin Panel
-                    </Button>
-                  )}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={signOut}
-                    className="text-sm"
-                  >
-                    Sign Out
-                  </Button>
-                </div>
-              )}
+            ) : (
+              <div className="flex items-center space-x-4">
+                <span className="text-sm text-gray-600">
+                  Welcome, {user.user_metadata?.full_name || user.email}
+                </span>
+                <Button
+                  onClick={() => navigate('/submit')}
+                  size="sm"
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  Submit Poll
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Poll Cards */}
+        <div className="relative">
+          {polls.map((poll, index) => (
+            <div
+              key={poll.id}
+              className={`${
+                index === currentPollIndex ? 'block' : 'hidden'
+              }`}
+            >
+              <PollCard
+                poll={poll}
+                isActive={index === currentPollIndex}
+                onVote={handleVote}
+              />
             </div>
-          </div>
+          ))}
         </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="pt-20">
-        {randomizedPolls.map((poll, index) => (
-          <div
-            key={`${poll.id}-${index}`}
-            className={`transition-all duration-700 ease-in-out ${
-              index === currentPollIndex 
-                ? 'opacity-100 transform translate-y-0' 
-                : index < currentPollIndex 
-                  ? 'opacity-0 transform -translate-y-full' 
-                  : 'opacity-0 transform translate-y-full'
-            }`}
-            style={{
-              position: index === currentPollIndex ? 'relative' : 'absolute',
-              top: index === currentPollIndex ? 0 : '100vh',
-              width: '100%',
-            }}
-          >
-            <PollCard 
-              poll={poll} 
-              isActive={index === currentPollIndex}
-              onVote={() => handleVote(index)}
-            />
-          </div>
-        ))}
-      </div>
-
-      {/* Completion Message */}
-      {allPollsVoted && (
-        <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-60 bg-white/95 backdrop-blur-md rounded-2xl p-8 shadow-2xl border border-gray-200 max-w-md text-center animate-fade-in">
-          <div className="text-6xl mb-4">🎉</div>
-          <h3 className="text-2xl font-bold text-gray-800 mb-3">You're killing it!</h3>
-          <p className="text-gray-600 text-lg">
-            You've now voted on all the available polls. Check later for more polls.
+        {/* Navigation Instructions */}
+        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 text-center">
+          <p className="text-gray-500 text-sm mb-2">
+            Use arrow keys, swipe, or click to navigate
           </p>
-        </div>
-      )}
-
-      {/* Navigation buttons */}
-      <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-50 flex space-x-4">
-        <button 
-          onClick={handlePrevPoll}
-          disabled={!canGoPrevious}
-          className={`px-6 py-2 rounded-full shadow-lg transition-all duration-300 ${
-            !canGoPrevious ? 'bg-gray-300 cursor-not-allowed' : 'bg-white hover:bg-gray-100 active:scale-95'
-          }`}
-        >
-          Previous
-        </button>
-        <button 
-          onClick={handleNextPoll}
-          disabled={!canGoNext}
-          className={`px-6 py-2 rounded-full shadow-lg transition-all duration-300 ${
-            !canGoNext ? 'bg-gray-300 cursor-not-allowed' : 'bg-white hover:bg-gray-100 active:scale-95'
-          }`}
-        >
-          Next
-        </button>
-      </div>
-
-      {/* Footer */}
-      <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
-        <div className="bg-white/90 backdrop-blur-md rounded-full px-6 py-3 shadow-lg border border-gray-200">
-          <div className="text-sm text-gray-600 text-center">
-            WPCS Poll
+          <div className="flex space-x-2">
+            <button
+              onClick={prevPoll}
+              disabled={currentPollIndex === 0}
+              className="w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm border border-gray-200 flex items-center justify-center disabled:opacity-50 hover:bg-white/90 transition-all"
+            >
+              ←
+            </button>
+            <button
+              onClick={nextPoll}
+              disabled={currentPollIndex === polls.length - 1}
+              className="w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm border border-gray-200 flex items-center justify-center disabled:opacity-50 hover:bg-white/90 transition-all"
+            >
+              →
+            </button>
           </div>
         </div>
+
+        {/* Scroll Indicator */}
+        <ScrollIndicator 
+          currentIndex={currentPollIndex} 
+          total={polls.length}
+          onIndexChange={setCurrentPollIndex}
+        />
       </div>
     </div>
   );
