@@ -51,30 +51,39 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          bio: string | null
           created_at: string
           email: string
           full_name: string | null
           id: string
+          location: string | null
           role: string
           updated_at: string
+          website: string | null
         }
         Insert: {
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string
           email: string
           full_name?: string | null
           id: string
+          location?: string | null
           role?: string
           updated_at?: string
+          website?: string | null
         }
         Update: {
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string
           email?: string
           full_name?: string | null
           id?: string
+          location?: string | null
           role?: string
           updated_at?: string
+          website?: string | null
         }
         Relationships: []
       }
@@ -115,7 +124,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_current_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

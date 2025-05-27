@@ -14,12 +14,12 @@ import { User, History, Heart, Plus, TrendingUp } from 'lucide-react';
 
 interface UserProfile {
   id: string;
-  full_name: string;
+  full_name: string | null;
   email: string;
-  avatar_url?: string;
-  bio?: string;
-  location?: string;
-  website?: string;
+  avatar_url?: string | null;
+  bio?: string | null;
+  location?: string | null;
+  website?: string | null;
 }
 
 interface VoteHistory {
@@ -119,7 +119,11 @@ const Profile = () => {
             .eq('id', vote.poll_id)
             .single();
 
-          const option = pollData?.options?.find((opt: any) => opt.id === vote.option_id);
+          let optionText = 'Unknown option';
+          if (pollData?.options && Array.isArray(pollData.options)) {
+            const option = pollData.options.find((opt: any) => opt.id === vote.option_id);
+            optionText = option?.text || 'Unknown option';
+          }
           
           return {
             id: vote.id,
@@ -127,7 +131,7 @@ const Profile = () => {
             option_id: vote.option_id,
             created_at: vote.created_at,
             poll_title: vote.polls.title,
-            option_text: option?.text || 'Unknown option'
+            option_text: optionText
           };
         })
       );

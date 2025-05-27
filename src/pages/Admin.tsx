@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 interface Poll {
   id: string;
   title: string;
-  description: string;
+  description: string | null;
   options: Array<{
     id: string;
     text: string;
@@ -23,8 +23,8 @@ interface Poll {
   }>;
   is_active: boolean;
   created_at: string;
-  category: string;
-  tags: string[];
+  category: string | null;
+  tags: string[] | null;
   created_by: string;
 }
 
@@ -76,7 +76,14 @@ const Admin = () => {
       
       const pollsWithTypedOptions = data?.map(poll => ({
         ...poll,
-        options: Array.isArray(poll.options) ? poll.options : []
+        options: Array.isArray(poll.options) ? poll.options as Array<{
+          id: string;
+          text: string;
+          votes: number;
+          color: string;
+        }> : [],
+        category: poll.category || 'General',
+        tags: poll.tags || []
       })) || [];
       
       setPolls(pollsWithTypedOptions);
@@ -101,7 +108,14 @@ const Admin = () => {
       
       const pollsWithTypedOptions = data?.map(poll => ({
         ...poll,
-        options: Array.isArray(poll.options) ? poll.options : []
+        options: Array.isArray(poll.options) ? poll.options as Array<{
+          id: string;
+          text: string;
+          votes: number;
+          color: string;
+        }> : [],
+        category: poll.category || 'General',
+        tags: poll.tags || []
       })) || [];
       
       setPendingPolls(pollsWithTypedOptions);
@@ -315,8 +329,8 @@ const Admin = () => {
     setEditingPoll(poll);
     setFormData({
       title: poll.title,
-      description: poll.description,
-      category: poll.category,
+      description: poll.description || '',
+      category: poll.category || 'General',
       options: poll.options.map(opt => opt.text).concat(Array(4 - poll.options.length).fill(''))
     });
     setShowCreateForm(true);
