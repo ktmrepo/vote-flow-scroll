@@ -138,25 +138,36 @@ const Index = () => {
       
       <div className="flex">
         {/* User Dashboard Sidebar - Only for authenticated users */}
-        {user && showUserPanel && (
-          <div className="fixed inset-0 z-50 lg:relative lg:inset-auto lg:w-80">
-            <div className="lg:hidden absolute inset-0 bg-black bg-opacity-50" onClick={() => setShowUserPanel(false)} />
-            <div className="relative bg-white h-full overflow-y-auto lg:w-80">
+        {user && (
+          <>
+            {/* Mobile overlay */}
+            {showUserPanel && (
+              <div 
+                className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden" 
+                onClick={() => setShowUserPanel(false)} 
+              />
+            )}
+            
+            {/* Sidebar */}
+            <div className={`
+              fixed inset-y-0 left-0 z-50 w-72 bg-white shadow-xl transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 lg:z-auto lg:shadow-none
+              ${showUserPanel ? 'translate-x-0' : '-translate-x-full'}
+            `}>
               <UserDashboard />
             </div>
-          </div>
+          </>
         )}
 
         {/* Main Content */}
         <div className="flex-1 relative">
           {/* Hamburger Menu Toggle (only for authenticated users) */}
           {user && (
-            <div className="absolute top-4 sm:top-6 left-4 sm:left-6 z-40">
+            <div className="fixed top-20 left-4 z-30 lg:hidden">
               <Button
                 onClick={() => setShowUserPanel(!showUserPanel)}
                 variant="outline"
                 size="sm"
-                className="bg-white/80 backdrop-blur-sm p-2 sm:p-3"
+                className="bg-white/90 backdrop-blur-sm border-gray-200 shadow-md hover:bg-white p-2"
               >
                 {showUserPanel ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
               </Button>
@@ -181,26 +192,28 @@ const Index = () => {
             ))}
           </div>
 
-          {/* Navigation Controls - Hidden on small screens to improve mobile UX */}
-          <div className="absolute bottom-4 sm:bottom-6 left-1/2 transform -translate-x-1/2 text-center hidden sm:block">
-            <p className="text-gray-500 text-xs sm:text-sm mb-2">
-              Use arrow keys, swipe, or click to navigate
-            </p>
-            <div className="flex space-x-2">
-              <button
-                onClick={prevPoll}
-                disabled={currentPollIndex === 0}
-                className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/80 backdrop-blur-sm border border-gray-200 flex items-center justify-center disabled:opacity-50 hover:bg-white/90 transition-all text-sm sm:text-base"
-              >
-                ←
-              </button>
-              <button
-                onClick={nextPoll}
-                disabled={currentPollIndex === filteredPolls.length - 1}
-                className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/80 backdrop-blur-sm border border-gray-200 flex items-center justify-center disabled:opacity-50 hover:bg-white/90 transition-all text-sm sm:text-base"
-              >
-                →
-              </button>
+          {/* Navigation Controls - Properly centered */}
+          <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-20 hidden sm:block">
+            <div className="text-center">
+              <p className="text-gray-500 text-xs mb-2">
+                Use arrow keys, swipe, or click to navigate
+              </p>
+              <div className="flex justify-center space-x-2">
+                <button
+                  onClick={prevPoll}
+                  disabled={currentPollIndex === 0}
+                  className="w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm border border-gray-200 flex items-center justify-center disabled:opacity-50 hover:bg-white transition-all shadow-md"
+                >
+                  ←
+                </button>
+                <button
+                  onClick={nextPoll}
+                  disabled={currentPollIndex === filteredPolls.length - 1}
+                  className="w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm border border-gray-200 flex items-center justify-center disabled:opacity-50 hover:bg-white transition-all shadow-md"
+                >
+                  →
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -119,7 +119,7 @@ const PollCard = ({ poll, isActive, onVote }: PollCardProps) => {
 
         {!showResult && user ? (
           <div className="space-y-3 sm:space-y-4">
-            <p className="text-center text-gray-600 mb-4 sm:mb-6 text-sm sm:text-lg">Cast your vote or swipe to continue:</p>
+            <p className="text-center text-gray-600 mb-4 sm:mb-6 text-sm sm:text-lg">Cast your vote:</p>
             {optionsWithVotes.map((option, index) => (
               <button
                 key={option.id}
@@ -144,11 +144,13 @@ const PollCard = ({ poll, isActive, onVote }: PollCardProps) => {
         ) : (
           <div className="space-y-4">
             {!user && (
-              <div className="text-center mb-6">
-                <p className="text-gray-600 mb-4 text-sm sm:text-base">Cast your vote or swipe to continue:</p>
+              <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
+                <p className="text-gray-600 text-sm sm:text-base order-2 sm:order-1">
+                  Swipe to continue
+                </p>
                 <Button 
                   onClick={() => window.location.href = '/auth'}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg text-sm sm:text-base"
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm order-1 sm:order-2"
                 >
                   Sign in to vote
                 </Button>
