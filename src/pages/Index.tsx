@@ -4,7 +4,6 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePolls } from '@/hooks/usePolls';
 import PollCard from '@/components/PollCard';
-import ScrollIndicator from '@/components/ScrollIndicator';
 import UserDashboard from '@/components/UserDashboard';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
@@ -38,10 +37,9 @@ const Index = () => {
   };
 
   const handleVote = () => {
-    // Automatically move to next poll after voting
-    setTimeout(() => {
-      nextPoll();
-    }, 2000);
+    // The auto-advance is now handled in PollCard component
+    // This function is called when the timer expires
+    nextPoll();
   };
 
   // Reset current poll index when filters change
@@ -120,8 +118,8 @@ const Index = () => {
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50">
         <Navbar />
         <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">No polls available</h2>
+          <div className="text-center px-4">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4">No polls available</h2>
             <p className="text-gray-600 mb-8">Check back later for new polls!</p>
             {user && (
               <Button onClick={() => navigate('/submit')} className="bg-blue-600 hover:bg-blue-700">
@@ -141,9 +139,9 @@ const Index = () => {
       <div className="flex">
         {/* User Dashboard Sidebar */}
         {user && showUserPanel && (
-          <div className="fixed inset-0 z-50 lg:relative lg:inset-auto">
+          <div className="fixed inset-0 z-50 lg:relative lg:inset-auto lg:w-80">
             <div className="lg:hidden absolute inset-0 bg-black bg-opacity-50" onClick={() => setShowUserPanel(false)} />
-            <div className="relative bg-white h-full overflow-y-auto">
+            <div className="relative bg-white h-full overflow-y-auto lg:w-80">
               <UserDashboard />
             </div>
           </div>
@@ -151,14 +149,14 @@ const Index = () => {
 
         {/* Main Content */}
         <div className="flex-1 relative">
-          {/* User Panel Toggle (only for authenticated users) */}
+          {/* Hamburger Menu Toggle (only for authenticated users) */}
           {user && (
-            <div className="absolute top-6 left-6 z-40">
+            <div className="absolute top-4 sm:top-6 left-4 sm:left-6 z-40">
               <Button
                 onClick={() => setShowUserPanel(!showUserPanel)}
                 variant="outline"
                 size="sm"
-                className="bg-white/80 backdrop-blur-sm"
+                className="bg-white/80 backdrop-blur-sm p-2 sm:p-3"
               >
                 {showUserPanel ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
               </Button>
@@ -183,35 +181,31 @@ const Index = () => {
             ))}
           </div>
 
-          {/* Navigation Instructions */}
-          <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 text-center">
-            <p className="text-gray-500 text-sm mb-2">
+          {/* Navigation Controls */}
+          <div className="absolute bottom-4 sm:bottom-6 left-1/2 transform -translate-x-1/2 text-center">
+            <p className="text-gray-500 text-xs sm:text-sm mb-2">
               Use arrow keys, swipe, or click to navigate
             </p>
             <div className="flex space-x-2">
               <button
                 onClick={prevPoll}
                 disabled={currentPollIndex === 0}
-                className="w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm border border-gray-200 flex items-center justify-center disabled:opacity-50 hover:bg-white/90 transition-all"
+                className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/80 backdrop-blur-sm border border-gray-200 flex items-center justify-center disabled:opacity-50 hover:bg-white/90 transition-all text-sm sm:text-base"
               >
                 ←
               </button>
+              <div className="flex items-center px-3 py-1 bg-white/80 backdrop-blur-sm border border-gray-200 rounded-full text-xs sm:text-sm">
+                {currentPollIndex + 1} / {filteredPolls.length}
+              </div>
               <button
                 onClick={nextPoll}
                 disabled={currentPollIndex === filteredPolls.length - 1}
-                className="w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm border border-gray-200 flex items-center justify-center disabled:opacity-50 hover:bg-white/90 transition-all"
+                className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/80 backdrop-blur-sm border border-gray-200 flex items-center justify-center disabled:opacity-50 hover:bg-white/90 transition-all text-sm sm:text-base"
               >
                 →
               </button>
             </div>
           </div>
-
-          {/* Scroll Indicator */}
-          <ScrollIndicator 
-            currentIndex={currentPollIndex} 
-            total={filteredPolls.length}
-            onIndexChange={setCurrentPollIndex}
-          />
         </div>
       </div>
     </div>

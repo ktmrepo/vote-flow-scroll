@@ -2,6 +2,8 @@
 import { useState, useEffect } from 'react';
 import { DatabasePoll } from '@/hooks/usePolls';
 import { useVotes } from '@/hooks/useVotes';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
 import PollResult from './PollResult';
 
 interface PollCardProps {
@@ -12,21 +14,54 @@ interface PollCardProps {
 
 const PollCard = ({ poll, isActive, onVote }: PollCardProps) => {
   const { userVote, votes, loading, castVote } = useVotes(poll.id);
+  const { user } = useAuth();
   const [hasVoted, setHasVoted] = useState(false);
+  const [showResult, setShowResult] = useState(false);
+  const [resultTimer, setResultTimer] = useState<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    setHasVoted(!!userVote);
-  }, [userVote]);
+    if (user) {
+      setHasVoted(!!userVote);
+      setShowResult(!!userVote);
+    } else {
+      // For non-authenticated users, always show results
+      setShowResult(true);
+      setHasVoted(false);
+    }
+  }, [userVote, user]);
 
   const handleVote = async (optionId: string) => {
-    if (loading) return;
+    if (loading || !user) return;
     
     const success = await castVote(optionId);
     if (success) {
       setHasVoted(true);
-      onVote?.();
+      setShowResult(true);
+      
+      // Set a timer to automatically move to next poll after 5 seconds
+      const timer = setTimeout(() => {
+        onVote?.();
+      }, 5000);
+      setResultTimer(timer);
     }
   };
+
+  // Clear timer when component unmounts or poll changes
+  useEffect(() => {
+    return () => {
+      if (resultTimer) {
+        clearTimeout(resultTimer);
+      }
+    };
+  }, [resultTimer]);
+
+  // Clear timer when poll becomes inactive
+  useEffect(() => {
+    if (!isActive && resultTimer) {
+      clearTimeout(resultTimer);
+      setResultTimer(null);
+    }
+  }, [isActive, resultTimer]);
 
   const getCategoryColor = () => {
     const category = poll.category?.toLowerCase() || '';
@@ -56,9 +91,9 @@ const PollCard = ({ poll, isActive, onVote }: PollCardProps) => {
 
   // Create poll object compatible with PollResult component
   const pollForResult = {
-    id: parseInt(poll.id.replace(/-/g, '').substring(0, 8), 16), // Convert UUID to number for compatibility
+    id: parseInt(poll.id.replace(/-/g, '').substring(0, 8), 16),
     question: poll.title,
-    category: poll.category as "Politics" | "Celebrity" | "Scientists" | "Geography", // Type assertion for compatibility
+    category: poll.category as "Politics" | "Celebrity" | "Scientists" | "Geography",
     options: optionsWithVotes
   };
 
@@ -66,40 +101,40 @@ const PollCard = ({ poll, isActive, onVote }: PollCardProps) => {
     <div className={`min-h-screen flex items-center justify-center p-4 transition-all duration-700 ${
       isActive ? 'opacity-100 scale-100' : 'opacity-70 scale-95'
     }`}>
-      <div className={`w-full max-w-2xl bg-gradient-to-br ${getCategoryGradient()} rounded-2xl shadow-2xl p-8 transform transition-all duration-500 ${
+      <div className={`w-full max-w-2xl bg-gradient-to-br ${getCategoryGradient()} rounded-2xl shadow-2xl p-4 sm:p-8 transform transition-all duration-500 ${
         isActive ? 'animate-fade-in' : ''
       }`}>
-        <div className="text-center mb-8">
-          <div className={`inline-block px-4 py-2 ${getCategoryColor()} text-white rounded-full text-sm font-semibold mb-4 transform transition-all duration-300 hover:scale-105`}>
+        <div className="text-center mb-6 sm:mb-8">
+          <div className={`inline-block px-3 py-1 sm:px-4 sm:py-2 ${getCategoryColor()} text-white rounded-full text-xs sm:text-sm font-semibold mb-3 sm:mb-4 transform transition-all duration-300 hover:scale-105`}>
             {poll.category}
           </div>
-          <h2 className="text-3xl font-bold text-gray-800 mb-2 leading-tight">
+          <h2 className="text-xl sm:text-3xl font-bold text-gray-800 mb-2 leading-tight px-2">
             {poll.title}
           </h2>
           {poll.description && (
-            <p className="text-gray-600 text-lg mb-4">{poll.description}</p>
+            <p className="text-gray-600 text-sm sm:text-lg mb-4 px-2">{poll.description}</p>
           )}
-          <div className="w-24 h-1 bg-gradient-to-r from-gray-300 to-gray-500 mx-auto rounded-full"></div>
+          <div className="w-16 sm:w-24 h-1 bg-gradient-to-r from-gray-300 to-gray-500 mx-auto rounded-full"></div>
         </div>
 
-        {!hasVoted ? (
-          <div className="space-y-4">
-            <p className="text-center text-gray-600 mb-6 text-lg">Cast your vote or swipe to continue:</p>
+        {!showResult && user ? (
+          <div className="space-y-3 sm:space-y-4">
+            <p className="text-center text-gray-600 mb-4 sm:mb-6 text-sm sm:text-lg">Cast your vote or swipe to continue:</p>
             {optionsWithVotes.map((option, index) => (
               <button
                 key={option.id}
                 onClick={() => handleVote(option.id)}
                 disabled={loading}
-                className={`w-full p-4 text-left rounded-xl border-2 border-gray-200 bg-white hover:border-gray-300 hover:shadow-lg transform transition-all duration-300 hover:scale-105 hover:-translate-y-1 animate-fade-in ${
+                className={`w-full p-3 sm:p-4 text-left rounded-xl border-2 border-gray-200 bg-white hover:border-gray-300 hover:shadow-lg transform transition-all duration-300 hover:scale-105 hover:-translate-y-1 animate-fade-in text-sm sm:text-base ${
                   loading ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
                 style={{ animationDelay: `${index * 100}ms` }}
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-lg font-medium text-gray-700">
+                  <span className="font-medium text-gray-700 pr-2">
                     {option.text}
                   </span>
-                  <div className={`w-6 h-6 rounded-full border-2 ${getCategoryColor()} border-opacity-30 flex items-center justify-center transition-all duration-200 hover:border-opacity-60`}>
+                  <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 ${getCategoryColor()} border-opacity-30 flex items-center justify-center transition-all duration-200 hover:border-opacity-60 flex-shrink-0`}>
                     <div className="w-2 h-2 rounded-full bg-transparent"></div>
                   </div>
                 </div>
@@ -107,14 +142,32 @@ const PollCard = ({ poll, isActive, onVote }: PollCardProps) => {
             ))}
           </div>
         ) : (
-          <PollResult 
-            poll={pollForResult} 
-            selectedOption={userVote || ''} 
-          />
+          <div className="space-y-4">
+            {!user && (
+              <div className="text-center mb-6">
+                <p className="text-gray-600 mb-4 text-sm sm:text-base">Cast your vote or swipe to continue:</p>
+                <Button 
+                  onClick={() => window.location.href = '/auth'}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg text-sm sm:text-base"
+                >
+                  Sign in to vote
+                </Button>
+              </div>
+            )}
+            <PollResult 
+              poll={pollForResult} 
+              selectedOption={userVote || ''} 
+            />
+            {hasVoted && resultTimer && (
+              <div className="text-center mt-4">
+                <p className="text-sm text-gray-500">Moving to next poll in 5 seconds...</p>
+              </div>
+            )}
+          </div>
         )}
 
-        <div className="text-center mt-8">
-          <p className="text-sm text-gray-500">
+        <div className="text-center mt-6 sm:mt-8">
+          <p className="text-xs sm:text-sm text-gray-500">
             WPCS Poll
           </p>
         </div>

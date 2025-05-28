@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -35,6 +34,13 @@ interface UserStats {
   totalVotes: number;
   pollsCreated: number;
   favoritePolls: number;
+}
+
+interface PollOption {
+  id: string;
+  text: string;
+  votes: number;
+  color: string;
 }
 
 const Profile = () => {
@@ -121,7 +127,7 @@ const Profile = () => {
 
           let optionText = 'Unknown option';
           if (pollData?.options && Array.isArray(pollData.options)) {
-            const option = pollData.options.find((opt: any) => opt.id === vote.option_id);
+            const option = (pollData.options as PollOption[]).find((opt: PollOption) => opt.id === vote.option_id);
             optionText = option?.text || 'Unknown option';
           }
           
