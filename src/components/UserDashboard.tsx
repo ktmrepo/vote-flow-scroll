@@ -1,264 +1,200 @@
 
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/hooks/use-toast';
-import { 
-  User, 
-  TrendingUp, 
-  Plus, 
-  Heart, 
-  LogOut, 
-  Settings,
-  CheckCircle,
-  XCircle,
-  Clock
-} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { User, TrendingUp, Heart, BarChart3, PlusCircle, Settings } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import AdminPollApproval from './AdminPollApproval';
 
-interface PendingPoll {
-  id: string;
-  title: string;
-  description: string;
-  category: string;
-  created_at: string;
-  created_by: string;
-  options: Array<{
-    id: string;
-    text: string;
-  }>;
+interface UserStats {
+  pollsCreated: number;
+  votesCast: number;
+  favoritePolls: number;
 }
 
 const UserDashboard = () => {
-  const { user, signOut, isAdmin } = useAuth();
+  const { user, isAdmin } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const [pendingPolls, setPendingPolls] = useState<PendingPoll[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [stats, setStats] = useState<UserStats>({
+    pollsCreated: 0,
+    votesCast: 0,
+    favoritePolls: 0
+  });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (isAdmin) {
-      fetchPendingPolls();
+    if (user) {
+      fetchUserStats();
     }
-  }, [isAdmin]);
+  }, [user]);
 
-  const fetchPendingPolls = async () => {
+  const fetchUserStats = async () => {
+    if (!user) return;
+
     try {
-      setLoading(true);
-      const { data, error } = await supabase
+      // Fetch user's polls
+      const { data: polls } = await supabase
         .from('polls')
-        .select('*')
-        .eq('is_active', false)
-        .order('created_at', { ascending: false });
+        .select('id')
+        .eq('created_by', user.id);
 
-      if (error) throw error;
-      
-      const typedPolls = data?.map(poll => ({
-        ...poll,
-        options: Array.isArray(poll.options) ? poll.options as Array<{
-          id: string;
-          text: string;
-        }> : []
-      })) || [];
-      
-      setPendingPolls(typedPolls);
-    } catch (error: any) {
-      console.error('Error fetching pending polls:', error);
+      // Fetch user's votes
+      const { data: votes } = await supabase
+        .from('votes')
+        .select('id')
+        .eq('user_id', user.id);
+
+      setStats({
+        pollsCreated: polls?.length || 0,
+        votesCast: votes?.length || 0,
+        favoritePolls: 0 // Placeholder for future feature
+      });
+    } catch (error) {
+      console.error('Error fetching user stats:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handlePollApproval = async (pollId: string, approve: boolean) => {
-    try {
-      if (approve) {
-        const { error } = await supabase
-          .from('polls')
-          .update({ is_active: true })
-          .eq('id', pollId);
-
-        if (error) throw error;
-        
-        toast({
-          title: "Poll approved",
-          description: "The poll has been activated and is now visible to users.",
-        });
-      } else {
-        const { error } = await supabase
-          .from('polls')
-          .delete()
-          .eq('id', pollId);
-
-        if (error) throw error;
-        
-        toast({
-          title: "Poll rejected",
-          description: "The poll has been removed from the system.",
-        });
-      }
-      
-      fetchPendingPolls();
-    } catch (error: any) {
-      toast({
-        title: "Error processing poll",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-      navigate('/');
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
-
   if (!user) {
     return (
-      <div className="w-80 bg-white border-r border-gray-200 h-screen p-6">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-4">
-            <span className="text-white font-bold text-xl">W</span>
-          </div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Welcome to WPCS Poll</h2>
-          <p className="text-gray-600 mb-6">Sign in to access your dashboard</p>
-          <Link to="/auth">
-            <Button className="w-full bg-blue-600 hover:bg-blue-700">
+      <div className="w-full p-6">
+        <Card>
+          <CardContent className="p-6 text-center">
+            <User className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+            <p className="text-gray-600 mb-4">Please sign in to view your dashboard</p>
+            <Button onClick={() => navigate('/auth')}>
               Sign In
             </Button>
-          </Link>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="w-full lg:w-80 bg-white border-r border-gray-200 h-screen overflow-y-auto">
-      <div className="p-6">
+    <div className="w-full h-full overflow-y-auto bg-white">
+      <div className="p-4 sm:p-6 space-y-6">
         {/* User Profile Section */}
-        <div className="flex items-center space-x-3 mb-6">
-          <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-            <User className="w-6 h-6 text-white" />
-          </div>
-          <div className="flex-1">
-            <h3 className="font-semibold text-gray-900 truncate">{user.email}</h3>
-            {isAdmin && (
-              <Badge variant="secondary" className="text-xs">Admin</Badge>
-            )}
-          </div>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <User className="w-5 h-5" />
+              Profile
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <p className="font-medium">{user.user_metadata?.full_name || user.email}</p>
+              <p className="text-sm text-gray-600">{user.email}</p>
+              {isAdmin && (
+                <span className="inline-block px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">
+                  Admin
+                </span>
+              )}
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="mt-4 w-full"
+              onClick={() => navigate('/profile')}
+            >
+              <Settings className="w-4 h-4 mr-2" />
+              Edit Profile
+            </Button>
+          </CardContent>
+        </Card>
 
-        {/* Navigation Links */}
-        <nav className="space-y-2 mb-6">
-          <Link to="/profile" className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 transition-colors">
-            <User className="w-5 h-5 text-gray-500" />
-            <span className="text-gray-700">Profile</span>
-          </Link>
-          <Link to="/submit" className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 transition-colors">
-            <Plus className="w-5 h-5 text-gray-500" />
-            <span className="text-gray-700">Submit Poll</span>
-          </Link>
-          {isAdmin && (
-            <Link to="/admin" className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 transition-colors">
-              <Settings className="w-5 h-5 text-gray-500" />
-              <span className="text-gray-700">Admin Panel</span>
-            </Link>
-          )}
-        </nav>
-
-        {/* Stats Cards */}
-        <div className="space-y-4 mb-6">
+        {/* Quick Stats */}
+        {loading ? (
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center">
-                <TrendingUp className="w-4 h-4 mr-2" />
-                Activity
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">12</div>
-              <p className="text-xs text-gray-500">Polls voted on</p>
+            <CardContent className="p-6 text-center">
+              <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
             </CardContent>
           </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center">
-                <Heart className="w-4 h-4 mr-2" />
-                Favorites
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">5</div>
-              <p className="text-xs text-gray-500">Your bookmarked polls</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Admin Section - Poll Approval */}
-        {isAdmin && (
-          <div className="mb-6">
-            <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
-              <Clock className="w-4 h-4 mr-2" />
-              Pending Polls ({pendingPolls.length})
-            </h4>
-            {loading ? (
-              <div className="text-center py-4">
-                <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-              </div>
-            ) : pendingPolls.length > 0 ? (
-              <div className="space-y-3 max-h-96 overflow-y-auto">
-                {pendingPolls.map((poll) => (
-                  <Card key={poll.id} className="p-3">
-                    <div className="space-y-2">
-                      <h5 className="font-medium text-sm text-gray-900 line-clamp-2">{poll.title}</h5>
-                      <div className="text-xs text-gray-500">
-                        {poll.category} • {new Date(poll.created_at).toLocaleDateString()}
-                      </div>
-                      <div className="flex space-x-2">
-                        <Button
-                          size="sm"
-                          onClick={() => handlePollApproval(poll.id, true)}
-                          className="flex-1 h-8 text-xs bg-green-600 hover:bg-green-700"
-                        >
-                          <CheckCircle className="w-3 h-3 mr-1" />
-                          Approve
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => handlePollApproval(poll.id, false)}
-                          className="flex-1 h-8 text-xs"
-                        >
-                          <XCircle className="w-3 h-3 mr-1" />
-                          Reject
-                        </Button>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-gray-500">No pending polls</p>
-            )}
+        ) : (
+          <div className="grid grid-cols-1 gap-4">
+            <Card>
+              <CardContent className="p-4 text-center">
+                <TrendingUp className="w-6 h-6 mx-auto mb-2 text-blue-600" />
+                <div className="text-xl font-bold text-blue-600">{stats.pollsCreated}</div>
+                <div className="text-xs text-gray-600">Polls Created</div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-4 text-center">
+                <BarChart3 className="w-6 h-6 mx-auto mb-2 text-green-600" />
+                <div className="text-xl font-bold text-green-600">{stats.votesCast}</div>
+                <div className="text-xs text-gray-600">Votes Cast</div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-4 text-center">
+                <Heart className="w-6 h-6 mx-auto mb-2 text-red-600" />
+                <div className="text-xl font-bold text-red-600">{stats.favoritePolls}</div>
+                <div className="text-xs text-gray-600">Favorites</div>
+                <p className="text-xs text-gray-500 mt-1">Your bookmarked polls</p>
+              </CardContent>
+            </Card>
           </div>
         )}
 
-        {/* Sign Out Button */}
-        <Button
-          onClick={handleSignOut}
-          variant="outline"
-          className="w-full flex items-center justify-center space-x-2"
-        >
-          <LogOut className="w-4 h-4" />
-          <span>Sign Out</span>
-        </Button>
+        {/* Quick Actions */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Quick Actions</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full justify-start"
+              onClick={() => navigate('/submit')}
+            >
+              <PlusCircle className="w-4 h-4 mr-2" />
+              Create New Poll
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full justify-start"
+              onClick={() => navigate('/')}
+            >
+              <TrendingUp className="w-4 h-4 mr-2" />
+              Browse Polls
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Admin Section */}
+        {isAdmin && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base text-purple-700">Admin Panel</CardTitle>
+              <CardDescription>Manage polls and user content</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <AdminPollApproval />
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Recent Activity Placeholder */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Recent Activity</CardTitle>
+            <CardDescription>Your latest poll interactions</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-gray-500 text-center py-4">
+              Activity feed coming soon...
+            </p>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

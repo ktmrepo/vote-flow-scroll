@@ -48,7 +48,8 @@ export const usePolls = () => {
           color: string;
         }> : [],
         category: poll.category || 'General',
-        tags: poll.tags || []
+        tags: poll.tags || [],
+        user_has_voted: false
       })) || [];
 
       // If user is logged in, check which polls they've voted on and prioritize unvoted polls

@@ -137,7 +137,7 @@ const Index = () => {
       <Navbar />
       
       <div className="flex">
-        {/* User Dashboard Sidebar */}
+        {/* User Dashboard Sidebar - Only for authenticated users */}
         {user && showUserPanel && (
           <div className="fixed inset-0 z-50 lg:relative lg:inset-auto lg:w-80">
             <div className="lg:hidden absolute inset-0 bg-black bg-opacity-50" onClick={() => setShowUserPanel(false)} />
@@ -181,8 +181,8 @@ const Index = () => {
             ))}
           </div>
 
-          {/* Navigation Controls */}
-          <div className="absolute bottom-4 sm:bottom-6 left-1/2 transform -translate-x-1/2 text-center">
+          {/* Navigation Controls - Hidden on small screens to improve mobile UX */}
+          <div className="absolute bottom-4 sm:bottom-6 left-1/2 transform -translate-x-1/2 text-center hidden sm:block">
             <p className="text-gray-500 text-xs sm:text-sm mb-2">
               Use arrow keys, swipe, or click to navigate
             </p>
@@ -194,9 +194,6 @@ const Index = () => {
               >
                 ←
               </button>
-              <div className="flex items-center px-3 py-1 bg-white/80 backdrop-blur-sm border border-gray-200 rounded-full text-xs sm:text-sm">
-                {currentPollIndex + 1} / {filteredPolls.length}
-              </div>
               <button
                 onClick={nextPoll}
                 disabled={currentPollIndex === filteredPolls.length - 1}
