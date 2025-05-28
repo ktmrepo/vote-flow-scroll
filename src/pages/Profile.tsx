@@ -54,6 +54,22 @@ interface UserVote {
   };
 }
 
+// Helper function to safely convert Json to PollOption array
+const convertJsonToPollOptions = (jsonData: any): PollOption[] => {
+  if (!Array.isArray(jsonData)) return [];
+  
+  return jsonData.filter((item): item is PollOption => {
+    return (
+      typeof item === 'object' &&
+      item !== null &&
+      typeof item.id === 'string' &&
+      typeof item.text === 'string' &&
+      typeof item.votes === 'number' &&
+      typeof item.color === 'string'
+    );
+  });
+};
+
 const Profile = () => {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
@@ -121,7 +137,7 @@ const Profile = () => {
 
       const typedPolls = data?.map(poll => ({
         ...poll,
-        options: Array.isArray(poll.options) ? poll.options as PollOption[] : []
+        options: convertJsonToPollOptions(poll.options)
       })) || [];
 
       setUserPolls(typedPolls);
@@ -149,7 +165,7 @@ const Profile = () => {
         ...vote,
         poll: {
           ...vote.poll,
-          options: Array.isArray(vote.poll?.options) ? vote.poll.options as PollOption[] : []
+          options: convertJsonToPollOptions(vote.poll?.options)
         }
       })) || [];
 
