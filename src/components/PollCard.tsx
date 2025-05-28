@@ -5,6 +5,9 @@ import { useVotes } from '@/hooks/useVotes';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import PollResult from './PollResult';
+import SocialShare from './SocialShare';
+import { useBookmarks } from '@/hooks/useBookmarks';
+import { Bookmark, BookmarkCheck } from 'lucide-react';
 
 interface PollCardProps {
   poll: DatabasePoll;
@@ -14,10 +17,12 @@ interface PollCardProps {
 
 const PollCard = ({ poll, isActive, onVote }: PollCardProps) => {
   const { userVote, votes, loading, castVote } = useVotes(poll.id);
+  const { bookmarkedPolls, toggleBookmark, loading: bookmarkLoading } = useBookmarks();
   const { user } = useAuth();
   const [hasVoted, setHasVoted] = useState(false);
   const [showResult, setShowResult] = useState(false);
   const [resultTimer, setResultTimer] = useState<NodeJS.Timeout | null>(null);
+  const isBookmarked = bookmarkedPolls.has(poll.id);
 
   useEffect(() => {
     if (user) {
@@ -44,6 +49,11 @@ const PollCard = ({ poll, isActive, onVote }: PollCardProps) => {
       }, 5000);
       setResultTimer(timer);
     }
+  };
+
+  const handleBookmarkToggle = async () => {
+    if (bookmarkLoading) return;
+    await toggleBookmark(poll.id);
   };
 
   // Clear timer when component unmounts or poll changes
@@ -98,15 +108,38 @@ const PollCard = ({ poll, isActive, onVote }: PollCardProps) => {
   };
 
   return (
-    <div className={`min-h-screen flex items-center justify-center p-4 transition-all duration-700 ${
-      isActive ? 'opacity-100 scale-100' : 'opacity-70 scale-95'
-    }`}>
+    <div 
+      className={`min-h-screen flex items-center justify-center p-4 transition-all duration-700 ${
+        isActive ? 'opacity-100 scale-100' : 'opacity-70 scale-95'
+      }`}
+      data-poll-card
+    >
       <div className={`w-full max-w-2xl bg-gradient-to-br ${getCategoryGradient()} rounded-2xl shadow-2xl p-4 sm:p-8 transform transition-all duration-500 ${
         isActive ? 'animate-fade-in' : ''
       }`}>
         <div className="text-center mb-6 sm:mb-8">
-          <div className={`inline-block px-3 py-1 sm:px-4 sm:py-2 ${getCategoryColor()} text-white rounded-full text-xs sm:text-sm font-semibold mb-3 sm:mb-4 transform transition-all duration-300 hover:scale-105`}>
-            {poll.category}
+          <div className="flex items-center justify-between mb-2">
+            <div className={`inline-block px-3 py-1 sm:px-4 sm:py-2 ${getCategoryColor()} text-white rounded-full text-xs sm:text-sm font-semibold mb-1 transform transition-all duration-300 hover:scale-105`}>
+              {poll.category}
+            </div>
+            <div className="flex items-center space-x-2">
+              <SocialShare pollId={poll.id} pollTitle={poll.title} />
+              {user && (
+                <Button
+                  onClick={handleBookmarkToggle}
+                  variant="ghost"
+                  size="sm"
+                  disabled={bookmarkLoading}
+                  className="text-gray-700 hover:bg-gray-100"
+                >
+                  {isBookmarked ? (
+                    <BookmarkCheck className="w-4 h-4 text-blue-500" />
+                  ) : (
+                    <Bookmark className="w-4 h-4" />
+                  )}
+                </Button>
+              )}
+            </div>
           </div>
           <h2 className="text-xl sm:text-3xl font-bold text-gray-800 mb-2 leading-tight px-2">
             {poll.title}
@@ -143,23 +176,23 @@ const PollCard = ({ poll, isActive, onVote }: PollCardProps) => {
           </div>
         ) : (
           <div className="space-y-4">
+            <PollResult 
+              poll={pollForResult} 
+              selectedOption={userVote || ''} 
+            />
+            
+            {/* Sign in button moved to bottom for non-logged in users */}
             {!user && (
-              <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
-                <p className="text-gray-600 text-sm sm:text-base order-2 sm:order-1">
-                  Swipe to continue
-                </p>
+              <div className="flex justify-center mt-6">
                 <Button 
                   onClick={() => window.location.href = '/auth'}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm order-1 sm:order-2"
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm"
                 >
                   Sign in to vote
                 </Button>
               </div>
             )}
-            <PollResult 
-              poll={pollForResult} 
-              selectedOption={userVote || ''} 
-            />
+            
             {hasVoted && resultTimer && (
               <div className="text-center mt-4">
                 <p className="text-sm text-gray-500">Moving to next poll in 5 seconds...</p>

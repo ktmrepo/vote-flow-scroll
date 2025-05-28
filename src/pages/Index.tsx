@@ -8,6 +8,8 @@ import UserDashboard from '@/components/UserDashboard';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Menu, X } from 'lucide-react';
+import PollNavigation from '@/components/PollNavigation';
+import { seedVoteData } from '@/utils/seedVoteData';
 
 const Index = () => {
   const [currentPollIndex, setCurrentPollIndex] = useState(0);
@@ -37,8 +39,7 @@ const Index = () => {
   };
 
   const handleVote = () => {
-    // The auto-advance is now handled in PollCard component
-    // This function is called when the timer expires
+    // Auto-advance is handled in PollCard component
     nextPoll();
   };
 
@@ -98,6 +99,18 @@ const Index = () => {
       window.removeEventListener('touchend', handleTouchEnd);
     };
   }, [currentPollIndex, filteredPolls.length]);
+
+  // Seed vote data
+  useEffect(() => {
+    if (polls.length > 0) {
+      // Only call once when polls are loaded
+      seedVoteData().then((votesAdded) => {
+        if (votesAdded > 0) {
+          console.log(`Added ${votesAdded} simulated votes to demonstrate engagement`);
+        }
+      });
+    }
+  }, [polls.length]);
 
   if (loading) {
     return (
@@ -174,6 +187,14 @@ const Index = () => {
             </div>
           )}
 
+          {/* Navigation arrows positioned on sides of poll card */}
+          <PollNavigation 
+            currentIndex={currentPollIndex} 
+            totalPolls={filteredPolls.length} 
+            onPrevious={prevPoll} 
+            onNext={nextPoll}
+          />
+
           {/* Poll Cards */}
           <div className="relative">
             {filteredPolls.map((poll, index) => (
@@ -190,31 +211,6 @@ const Index = () => {
                 />
               </div>
             ))}
-          </div>
-
-          {/* Navigation Controls - Properly centered */}
-          <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-20 hidden sm:block">
-            <div className="text-center">
-              <p className="text-gray-500 text-xs mb-2">
-                Use arrow keys, swipe, or click to navigate
-              </p>
-              <div className="flex justify-center space-x-2">
-                <button
-                  onClick={prevPoll}
-                  disabled={currentPollIndex === 0}
-                  className="w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm border border-gray-200 flex items-center justify-center disabled:opacity-50 hover:bg-white transition-all shadow-md"
-                >
-                  ←
-                </button>
-                <button
-                  onClick={nextPoll}
-                  disabled={currentPollIndex === filteredPolls.length - 1}
-                  className="w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm border border-gray-200 flex items-center justify-center disabled:opacity-50 hover:bg-white transition-all shadow-md"
-                >
-                  →
-                </button>
-              </div>
-            </div>
           </div>
         </div>
       </div>
