@@ -60,7 +60,7 @@ export const seedVoteData = async () => {
                 .insert({
                   poll_id: poll.id,
                   user_id: randomUserId,
-                  option_id: option.id,
+                  option_id: String(option.id), // Convert to string
                   created_at: new Date().toISOString()
                 });
                 

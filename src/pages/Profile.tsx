@@ -3,12 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Navbar from '@/components/Navbar';
-import ProfileHeader from '@/components/ProfileHeader';
-import ProfileForm from '@/components/ProfileForm';
+import ProfileStats from '@/components/ProfileStats';
+import ProfileInfo from '@/components/ProfileInfo';
 import ProfileActivity from '@/components/ProfileActivity';
-import { User } from 'lucide-react';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 interface UserProfile {
   id: string;
@@ -230,12 +229,7 @@ const Profile = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50">
         <Navbar />
-        <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
-          <div className="text-center">
-            <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading profile...</p>
-          </div>
-        </div>
+        <LoadingSpinner message="Loading profile..." />
       </div>
     );
   }
@@ -250,32 +244,19 @@ const Profile = () => {
         </div>
 
         {/* Profile Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="w-5 h-5" />
-              Profile Information
-            </CardTitle>
-            <CardDescription>
-              Update your personal information and bio
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {profile && (
-              <ProfileForm 
-                email={user.email ?? ''} 
-                initialValues={formData}
-                createdAt={profile.created_at}
-                onSubmit={updateProfile}
-                onSignOut={signOut}
-                updating={updating}
-              />
-            )}
-          </CardContent>
-        </Card>
+        {profile && (
+          <ProfileInfo 
+            profile={profile}
+            email={user.email ?? ''} 
+            formData={formData}
+            onSubmit={updateProfile}
+            onSignOut={signOut}
+            updating={updating}
+          />
+        )}
 
         {/* User Statistics */}
-        <ProfileHeader 
+        <ProfileStats 
           pollsCount={userPolls.length} 
           votesCount={userVotes.length}
           userRole={profile?.role || 'user'}
