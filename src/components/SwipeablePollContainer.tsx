@@ -36,6 +36,10 @@ const SwipeablePollContainer = ({
     delta: 50,
   });
 
+  if (!polls || polls.length === 0) {
+    return null;
+  }
+
   return (
     <div {...handlers} className="relative overflow-hidden">
       <div 

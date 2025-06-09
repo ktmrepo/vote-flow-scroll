@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Menu, X, Home, Contact, LogIn, UserPlus, User, PlusCircle, LogOut } from 'lucide-react';
+import { Menu, X, Home, Contact, LogIn, UserPlus, User, PlusCircle, LogOut, ChevronDown, ChevronRight } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -12,9 +12,15 @@ import {
   DrawerTrigger,
   DrawerClose,
 } from '@/components/ui/drawer';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 
 const MobileNavbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [categoriesOpen, setCategoriesOpen] = useState(false);
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
 
@@ -57,75 +63,8 @@ const MobileNavbar = () => {
           </DrawerHeader>
           
           <div className="flex flex-col h-full overflow-y-auto p-4 space-y-2">
-            {/* Home Section */}
-            <div className="space-y-1">
-              <button
-                onClick={() => handleNavigation('/')}
-                className="flex items-center w-full text-left px-3 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <Home className="w-5 h-5 mr-3" />
-                Latest Polls
-              </button>
-              <button
-                onClick={() => handleNavigation('/?sort=trending')}
-                className="flex items-center w-full text-left px-3 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors ml-6"
-              >
-                Trending
-              </button>
-            </div>
-
-            {/* Categories Section */}
-            <div className="space-y-1">
-              <div className="px-3 py-2 text-sm font-semibold text-gray-500 uppercase tracking-wider">
-                Categories
-              </div>
-              {categories.map((category) => (
-                <button
-                  key={category}
-                  onClick={() => handleNavigation(`/?category=${encodeURIComponent(category)}`)}
-                  className="flex items-center w-full text-left px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors ml-3"
-                >
-                  {category}
-                </button>
-              ))}
-              <button
-                onClick={() => handleNavigation('/')}
-                className="flex items-center w-full text-left px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors ml-3"
-              >
-                All Categories
-              </button>
-            </div>
-
-            {/* Popular Polls Section */}
-            <div className="space-y-1">
-              <div className="px-3 py-2 text-sm font-semibold text-gray-500 uppercase tracking-wider">
-                Popular
-              </div>
-              <button
-                onClick={() => handleNavigation('/?sort=popular')}
-                className="flex items-center w-full text-left px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors ml-3"
-              >
-                Most Voted
-              </button>
-              <button
-                onClick={() => handleNavigation('/?sort=recent')}
-                className="flex items-center w-full text-left px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors ml-3"
-              >
-                Recent
-              </button>
-            </div>
-
-            {/* Contact */}
-            <button
-              onClick={() => handleNavigation('/contact')}
-              className="flex items-center w-full text-left px-3 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <Contact className="w-5 h-5 mr-3" />
-              Contact
-            </button>
-            
-            {/* Auth Section */}
-            <div className="border-t pt-4 mt-auto">
+            {/* Auth Section - Now at the top */}
+            <div className="border-b pb-4 mb-4">
               {user ? (
                 <div className="space-y-2">
                   <div className="px-3 py-2 text-sm text-gray-500">
@@ -175,6 +114,84 @@ const MobileNavbar = () => {
                 </div>
               )}
             </div>
+
+            {/* Home Section */}
+            <div className="space-y-1">
+              <button
+                onClick={() => handleNavigation('/')}
+                className="flex items-center w-full text-left px-3 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <Home className="w-5 h-5 mr-3" />
+                Latest Polls
+              </button>
+              <button
+                onClick={() => handleNavigation('/?sort=trending')}
+                className="flex items-center w-full text-left px-3 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors ml-6"
+              >
+                Trending
+              </button>
+            </div>
+
+            {/* Categories Section with Collapsible */}
+            <div className="space-y-1">
+              <Collapsible open={categoriesOpen} onOpenChange={setCategoriesOpen}>
+                <CollapsibleTrigger asChild>
+                  <button className="flex items-center justify-between w-full text-left px-3 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+                    <span className="font-medium">All Categories</span>
+                    {categoriesOpen ? (
+                      <ChevronDown className="w-4 h-4" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4" />
+                    )}
+                  </button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="space-y-1">
+                  {categories.map((category) => (
+                    <button
+                      key={category}
+                      onClick={() => handleNavigation(`/?category=${encodeURIComponent(category)}`)}
+                      className="flex items-center w-full text-left px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors ml-6"
+                    >
+                      {category}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => handleNavigation('/')}
+                    className="flex items-center w-full text-left px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors ml-6"
+                  >
+                    View All
+                  </button>
+                </CollapsibleContent>
+              </Collapsible>
+            </div>
+
+            {/* Popular Polls Section */}
+            <div className="space-y-1">
+              <div className="px-3 py-2 text-sm font-semibold text-gray-500 uppercase tracking-wider">
+                Popular
+              </div>
+              <button
+                onClick={() => handleNavigation('/?sort=popular')}
+                className="flex items-center w-full text-left px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors ml-3"
+              >
+                Most Voted
+              </button>
+              <button
+                onClick={() => handleNavigation('/?sort=recent')}
+                className="flex items-center w-full text-left px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors ml-3"
+              >
+                Recent
+              </button>
+            </div>
+
+            {/* Contact */}
+            <button
+              onClick={() => handleNavigation('/contact')}
+              className="flex items-center w-full text-left px-3 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <Contact className="w-5 h-5 mr-3" />
+              Contact
+            </button>
           </div>
         </DrawerContent>
       </Drawer>

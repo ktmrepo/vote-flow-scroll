@@ -21,12 +21,16 @@ const Index = () => {
   const { polls, loading } = usePolls();
   const { user } = useAuth();
 
+  console.log('Index component - Polls:', polls, 'Loading:', loading);
+
   // Filter polls based on URL parameters
   const filteredPolls = polls.filter(poll => {
     const category = searchParams.get('category');
     if (category && poll.category !== category) return false;
     return true;
   });
+
+  console.log('Filtered polls:', filteredPolls);
 
   const nextPoll = () => {
     if (currentPollIndex < filteredPolls.length - 1) {
