@@ -7,9 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Edit, Trash2, Eye, EyeOff, BarChart3, Users, TrendingUp, Check, X } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, EyeOff, BarChart3, Users, TrendingUp, Check, X, Upload } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import BulkUpload from '@/components/BulkUpload';
 
 interface Poll {
   id: string;
@@ -374,6 +375,10 @@ const Admin = () => {
             <TabsTrigger value="pending">
               Pending Approval ({analytics.pendingPolls})
             </TabsTrigger>
+            <TabsTrigger value="bulk-upload">
+              <Upload className="w-4 h-4 mr-2" />
+              Bulk Upload
+            </TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
           </TabsList>
 
@@ -486,6 +491,10 @@ const Admin = () => {
                 )}
               </div>
             </div>
+          </TabsContent>
+
+          <TabsContent value="bulk-upload">
+            <BulkUpload />
           </TabsContent>
 
           <TabsContent value="polls">

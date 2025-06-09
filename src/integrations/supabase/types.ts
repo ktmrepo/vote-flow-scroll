@@ -38,6 +38,48 @@ export type Database = {
           },
         ]
       }
+      bulk_uploads: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          error_details: Json | null
+          failed_records: number
+          file_name: string
+          id: string
+          status: string
+          successful_records: number
+          total_records: number
+          upload_type: string
+          uploaded_by: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          error_details?: Json | null
+          failed_records?: number
+          file_name: string
+          id?: string
+          status?: string
+          successful_records?: number
+          total_records?: number
+          upload_type: string
+          uploaded_by: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          error_details?: Json | null
+          failed_records?: number
+          file_name?: string
+          id?: string
+          status?: string
+          successful_records?: number
+          total_records?: number
+          upload_type?: string
+          uploaded_by?: string
+        }
+        Relationships: []
+      }
       polls: {
         Row: {
           category: string | null
@@ -116,6 +158,82 @@ export type Database = {
         }
         Relationships: []
       }
+      temp_poll_uploads: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          options: Json
+          title: string
+          upload_session_id: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          options?: Json
+          title: string
+          upload_session_id?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          options?: Json
+          title?: string
+          upload_session_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "temp_poll_uploads_upload_session_id_fkey"
+            columns: ["upload_session_id"]
+            isOneToOne: false
+            referencedRelation: "bulk_uploads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      temp_user_uploads: {
+        Row: {
+          created_at: string | null
+          email: string
+          full_name: string | null
+          id: string
+          role: string | null
+          upload_session_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          full_name?: string | null
+          id?: string
+          role?: string | null
+          upload_session_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          full_name?: string | null
+          id?: string
+          role?: string | null
+          upload_session_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "temp_user_uploads_upload_session_id_fkey"
+            columns: ["upload_session_id"]
+            isOneToOne: false
+            referencedRelation: "bulk_uploads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       votes: {
         Row: {
           created_at: string
@@ -156,6 +274,14 @@ export type Database = {
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      process_poll_bulk_upload: {
+        Args: { upload_session_id: string }
+        Returns: undefined
+      }
+      process_user_bulk_upload: {
+        Args: { upload_session_id: string }
+        Returns: undefined
       }
     }
     Enums: {

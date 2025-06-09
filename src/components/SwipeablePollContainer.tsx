@@ -37,23 +37,28 @@ const SwipeablePollContainer = ({
   });
 
   if (!polls || polls.length === 0) {
-    return null;
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <p className="text-gray-500 text-lg">No polls available</p>
+          <p className="text-gray-400 text-sm mt-2">Check back later for new polls!</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div {...handlers} className="relative overflow-hidden">
+    <div className="w-full overflow-hidden" {...handlers}>
       <div 
-        className="flex transition-transform duration-300 ease-in-out"
+        className="flex transition-transform duration-300 ease-in-out w-full"
         style={{ 
           transform: `translateX(-${currentIndex * 100}%)`,
-          width: `${polls.length * 100}%`
         }}
       >
         {polls.map((poll, index) => (
           <div
             key={poll.id}
             className="w-full flex-shrink-0"
-            style={{ width: `${100 / polls.length}%` }}
           >
             <PollCard
               poll={poll}

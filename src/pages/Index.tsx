@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -127,7 +126,7 @@ const Index = () => {
         )}
 
         {/* Main Content */}
-        <div className="flex-1 relative">
+        <div className="flex-1 relative flex flex-col">
           {/* Hamburger Menu Toggle (only for authenticated users) */}
           {user && (
             <div className="fixed top-20 left-4 z-30 lg:hidden">
@@ -142,22 +141,27 @@ const Index = () => {
             </div>
           )}
 
-          {/* Navigation arrows positioned beside poll box */}
-          <PollNavigation 
-            currentIndex={currentPollIndex} 
-            totalPolls={filteredPolls.length} 
-            onPrevious={prevPoll} 
-            onNext={nextPoll}
-          />
+          {/* Poll Content Container */}
+          <div className="flex-1 flex items-center justify-center p-4 lg:p-8 relative">
+            {/* Navigation arrows positioned beside poll box */}
+            <PollNavigation 
+              currentIndex={currentPollIndex} 
+              totalPolls={filteredPolls.length} 
+              onPrevious={prevPoll} 
+              onNext={nextPoll}
+            />
 
-          {/* Swipeable Poll Container */}
-          <SwipeablePollContainer 
-            polls={filteredPolls}
-            currentIndex={currentPollIndex}
-            onVote={handleVote}
-            onNext={nextPoll}
-            onPrevious={prevPoll}
-          />
+            {/* Main Poll Container - Centered */}
+            <div className="w-full max-w-4xl mx-auto">
+              <SwipeablePollContainer 
+                polls={filteredPolls}
+                currentIndex={currentPollIndex}
+                onVote={handleVote}
+                onNext={nextPoll}
+                onPrevious={prevPoll}
+              />
+            </div>
+          </div>
         </div>
       </div>
       
