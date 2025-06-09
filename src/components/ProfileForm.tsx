@@ -15,7 +15,7 @@ interface ProfileFormProps {
     website: string;
   };
   createdAt: string;
-  onSubmit: (formData: any) => Promise<void>;
+  onSubmit: (formData: any) => void;
   onSignOut: () => void;
   updating: boolean;
 }
