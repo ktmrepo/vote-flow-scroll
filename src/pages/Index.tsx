@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -141,18 +142,18 @@ const Index = () => {
             </div>
           )}
 
-          {/* Poll Content Container */}
-          <div className="flex-1 flex items-center justify-center p-4 lg:p-8 relative">
-            {/* Navigation arrows positioned beside poll box */}
-            <PollNavigation 
-              currentIndex={currentPollIndex} 
-              totalPolls={filteredPolls.length} 
-              onPrevious={prevPoll} 
-              onNext={nextPoll}
-            />
+          {/* Poll Content Container with proper positioning and padding */}
+          <div className="flex-1 flex items-center justify-center p-4 lg:p-8 relative lg:pb-16">
+            {/* Main Poll Container - Centered with relative positioning for navigation */}
+            <div className="w-full max-w-4xl mx-auto relative">
+              {/* Navigation positioned relative to this container */}
+              <PollNavigation 
+                currentIndex={currentPollIndex} 
+                totalPolls={filteredPolls.length} 
+                onPrevious={prevPoll} 
+                onNext={nextPoll}
+              />
 
-            {/* Main Poll Container - Centered */}
-            <div className="w-full max-w-4xl mx-auto">
               <SwipeablePollContainer 
                 polls={filteredPolls}
                 currentIndex={currentPollIndex}

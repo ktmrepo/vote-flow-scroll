@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -12,33 +13,36 @@ interface PollNavigationProps {
 const PollNavigation = ({ currentIndex, totalPolls, onPrevious, onNext }: PollNavigationProps) => {
   return (
     <>
-      {/* Left Arrow - positioned beside poll box */}
-      <div className="fixed left-1/2 top-1/2 transform -translate-y-1/2 -translate-x-full z-20" style={{ marginLeft: '-25rem' }}>
-        <Button
-          onClick={onPrevious}
-          disabled={currentIndex === 0}
-          variant="outline"
-          size="icon"
-          className="w-12 h-12 rounded-full bg-white/90 backdrop-blur-sm border border-gray-200 shadow-lg disabled:opacity-50 hover:bg-white transition-all"
-        >
-          <ChevronLeft className="w-6 h-6" />
-        </Button>
+      {/* Desktop Navigation - positioned relative to poll container */}
+      <div className="hidden md:block">
+        {/* Left Arrow */}
+        <div className="absolute left-4 top-1/2 transform -translate-y-1/2 z-20">
+          <Button
+            onClick={onPrevious}
+            disabled={currentIndex === 0}
+            variant="outline"
+            size="icon"
+            className="w-12 h-12 rounded-full bg-white/90 backdrop-blur-sm border border-gray-200 shadow-lg disabled:opacity-50 hover:bg-white transition-all"
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </Button>
+        </div>
+
+        {/* Right Arrow */}
+        <div className="absolute right-4 top-1/2 transform -translate-y-1/2 z-20">
+          <Button
+            onClick={onNext}
+            disabled={currentIndex === totalPolls - 1}
+            variant="outline"
+            size="icon"
+            className="w-12 h-12 rounded-full bg-white/90 backdrop-blur-sm border border-gray-200 shadow-lg disabled:opacity-50 hover:bg-white transition-all"
+          >
+            <ChevronRight className="w-6 h-6" />
+          </Button>
+        </div>
       </div>
 
-      {/* Right Arrow - positioned beside poll box */}
-      <div className="fixed left-1/2 top-1/2 transform -translate-y-1/2 translate-x-full z-20" style={{ marginLeft: '25rem' }}>
-        <Button
-          onClick={onNext}
-          disabled={currentIndex === totalPolls - 1}
-          variant="outline"
-          size="icon"
-          className="w-12 h-12 rounded-full bg-white/90 backdrop-blur-sm border border-gray-200 shadow-lg disabled:opacity-50 hover:bg-white transition-all"
-        >
-          <ChevronRight className="w-6 h-6" />
-        </Button>
-      </div>
-
-      {/* Mobile navigation - keep at screen edges for mobile */}
+      {/* Mobile navigation - positioned at screen edges */}
       <div className="block md:hidden">
         <div className="fixed left-4 top-1/2 transform -translate-y-1/2 z-20">
           <Button

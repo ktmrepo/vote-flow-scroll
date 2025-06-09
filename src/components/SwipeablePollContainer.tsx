@@ -58,7 +58,7 @@ const SwipeablePollContainer = ({
         {polls.map((poll, index) => (
           <div
             key={poll.id}
-            className="w-full flex-shrink-0"
+            className="w-full flex-shrink-0 min-h-screen md:min-h-0"
           >
             <PollCard
               poll={poll}

@@ -11,12 +11,12 @@ import {
   MenubarSeparator,
   MenubarTrigger,
 } from '@/components/ui/menubar';
-import { Home, Contact, LogIn, UserPlus } from 'lucide-react';
+import { Home, Contact, LogIn, UserPlus, LogOut } from 'lucide-react';
 import MobileNavbar from './MobileNavbar';
 import AuthModal from './AuthModal';
 
 const Navbar = () => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
 
   const categories = [
@@ -140,18 +140,12 @@ const Navbar = () => {
                   Welcome, {user.user_metadata?.full_name || user.email}
                 </span>
                 <Button
-                  onClick={() => navigate('/submit')}
-                  size="sm"
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  Submit Poll
-                </Button>
-                <Button
-                  onClick={() => navigate('/profile')}
+                  onClick={signOut}
                   variant="outline"
                   size="sm"
                 >
-                  Profile
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Sign Out
                 </Button>
               </div>
             )}

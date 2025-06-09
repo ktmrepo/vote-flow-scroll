@@ -110,12 +110,12 @@ const PollCard = ({ poll, isActive, onVote }: PollCardProps) => {
 
   return (
     <div 
-      className={`min-h-screen flex items-center justify-center p-4 transition-all duration-700 ${
+      className={`flex items-center justify-center p-4 transition-all duration-700 min-h-screen md:min-h-[600px] ${
         isActive ? 'opacity-100 scale-100' : 'opacity-70 scale-95'
       }`}
       data-poll-card
     >
-      <div className={`w-full max-w-2xl bg-gradient-to-br ${getCategoryGradient()} rounded-2xl shadow-2xl p-4 sm:p-8 transform transition-all duration-500 ${
+      <div className={`w-full max-w-2xl bg-gradient-to-br ${getCategoryGradient()} rounded-2xl shadow-2xl p-4 sm:p-8 transform transition-all duration-500 mx-4 ${
         isActive ? 'animate-fade-in' : ''
       }`}>
         <div className="text-center mb-6 sm:mb-8">
