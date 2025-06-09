@@ -5,10 +5,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { usePolls } from '@/hooks/usePolls';
 import UserDashboard from '@/components/UserDashboard';
 import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Menu, X } from 'lucide-react';
 import PollNavigation from '@/components/PollNavigation';
-import PollContainer from '@/components/PollContainer';
+import SwipeablePollContainer from '@/components/SwipeablePollContainer';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import EmptyPollsState from '@/components/EmptyPollsState';
 import { seedVoteData } from '@/utils/seedVoteData';
@@ -77,27 +78,29 @@ const Index = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 flex flex-col">
         <Navbar />
         <LoadingSpinner message="Loading polls..." />
+        <Footer />
       </div>
     );
   }
 
   if (filteredPolls.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 flex flex-col">
         <Navbar />
         <EmptyPollsState />
+        <Footer />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 flex flex-col">
       <Navbar />
       
-      <div className="flex">
+      <div className="flex flex-1">
         {/* User Dashboard Sidebar - Only for authenticated users */}
         {user && (
           <>
@@ -143,14 +146,18 @@ const Index = () => {
             onNext={nextPoll}
           />
 
-          {/* Poll Container */}
-          <PollContainer 
+          {/* Swipeable Poll Container */}
+          <SwipeablePollContainer 
             polls={filteredPolls}
             currentIndex={currentPollIndex}
             onVote={handleVote}
+            onNext={nextPoll}
+            onPrevious={prevPoll}
           />
         </div>
       </div>
+      
+      <Footer />
     </div>
   );
 };

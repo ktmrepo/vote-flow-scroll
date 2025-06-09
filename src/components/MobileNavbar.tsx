@@ -1,9 +1,17 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Home, Contact, LogIn, UserPlus, User, PlusCircle, LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+  DrawerClose,
+} from '@/components/ui/drawer';
 
 const MobileNavbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -15,63 +23,126 @@ const MobileNavbar = () => {
     setIsOpen(false);
   };
 
+  const categories = [
+    'Technology',
+    'Entertainment', 
+    'Food & Drink',
+    'Health & Fitness',
+    'Education',
+    'Travel',
+    'Lifestyle',
+    'Gaming',
+    'Music',
+    'Sports'
+  ];
+
   return (
     <div className="lg:hidden">
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => setIsOpen(!isOpen)}
-        className="p-2"
-      >
-        {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-      </Button>
+      <Drawer open={isOpen} onOpenChange={setIsOpen}>
+        <DrawerTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="p-2"
+            aria-label="Open navigation menu"
+          >
+            <Menu className="w-5 h-5" />
+          </Button>
+        </DrawerTrigger>
+        <DrawerContent className="h-[85vh]">
+          <DrawerHeader className="text-center border-b pb-4">
+            <DrawerTitle className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              WPCS Poll
+            </DrawerTitle>
+          </DrawerHeader>
+          
+          <div className="flex flex-col h-full overflow-y-auto p-4 space-y-2">
+            {/* Home Section */}
+            <div className="space-y-1">
+              <button
+                onClick={() => handleNavigation('/')}
+                className="flex items-center w-full text-left px-3 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <Home className="w-5 h-5 mr-3" />
+                Latest Polls
+              </button>
+              <button
+                onClick={() => handleNavigation('/?sort=trending')}
+                className="flex items-center w-full text-left px-3 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors ml-6"
+              >
+                Trending
+              </button>
+            </div>
 
-      {isOpen && (
-        <>
-          <div 
-            className="fixed inset-0 z-40 bg-black bg-opacity-50" 
-            onClick={() => setIsOpen(false)} 
-          />
-          <div className="fixed top-16 right-0 z-50 w-64 bg-white shadow-xl rounded-l-lg p-4 space-y-3">
-            <button
-              onClick={() => handleNavigation('/')}
-              className="block w-full text-left px-3 py-2 text-gray-700 hover:bg-gray-100 rounded"
-            >
-              Home
-            </button>
-            <button
-              onClick={() => handleNavigation('/?category=technology')}
-              className="block w-full text-left px-3 py-2 text-gray-700 hover:bg-gray-100 rounded"
-            >
-              Categories
-            </button>
-            <button
-              onClick={() => handleNavigation('/?popular=true')}
-              className="block w-full text-left px-3 py-2 text-gray-700 hover:bg-gray-100 rounded"
-            >
-              Popular Polls
-            </button>
+            {/* Categories Section */}
+            <div className="space-y-1">
+              <div className="px-3 py-2 text-sm font-semibold text-gray-500 uppercase tracking-wider">
+                Categories
+              </div>
+              {categories.map((category) => (
+                <button
+                  key={category}
+                  onClick={() => handleNavigation(`/?category=${encodeURIComponent(category)}`)}
+                  className="flex items-center w-full text-left px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors ml-3"
+                >
+                  {category}
+                </button>
+              ))}
+              <button
+                onClick={() => handleNavigation('/')}
+                className="flex items-center w-full text-left px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors ml-3"
+              >
+                All Categories
+              </button>
+            </div>
+
+            {/* Popular Polls Section */}
+            <div className="space-y-1">
+              <div className="px-3 py-2 text-sm font-semibold text-gray-500 uppercase tracking-wider">
+                Popular
+              </div>
+              <button
+                onClick={() => handleNavigation('/?sort=popular')}
+                className="flex items-center w-full text-left px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors ml-3"
+              >
+                Most Voted
+              </button>
+              <button
+                onClick={() => handleNavigation('/?sort=recent')}
+                className="flex items-center w-full text-left px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors ml-3"
+              >
+                Recent
+              </button>
+            </div>
+
+            {/* Contact */}
             <button
               onClick={() => handleNavigation('/contact')}
-              className="block w-full text-left px-3 py-2 text-gray-700 hover:bg-gray-100 rounded"
+              className="flex items-center w-full text-left px-3 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
             >
+              <Contact className="w-5 h-5 mr-3" />
               Contact
             </button>
             
-            {user ? (
-              <>
-                <div className="border-t pt-3">
-                  <p className="px-3 py-2 text-sm text-gray-500">Welcome {user.email}</p>
+            {/* Auth Section */}
+            <div className="border-t pt-4 mt-auto">
+              {user ? (
+                <div className="space-y-2">
+                  <div className="px-3 py-2 text-sm text-gray-500">
+                    Welcome, {user.user_metadata?.full_name || user.email}
+                  </div>
                   <button
                     onClick={() => handleNavigation('/profile')}
-                    className="block w-full text-left px-3 py-2 text-gray-700 hover:bg-gray-100 rounded"
+                    className="flex items-center w-full text-left px-3 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
                   >
+                    <User className="w-5 h-5 mr-3" />
                     Profile
                   </button>
                   <button
                     onClick={() => handleNavigation('/submit')}
-                    className="block w-full text-left px-3 py-2 text-gray-700 hover:bg-gray-100 rounded"
+                    className="flex items-center w-full text-left px-3 py-3 text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
                   >
+                    <PlusCircle className="w-5 h-5 mr-3" />
                     Submit Poll
                   </button>
                   <button
@@ -79,25 +150,34 @@ const MobileNavbar = () => {
                       signOut();
                       setIsOpen(false);
                     }}
-                    className="block w-full text-left px-3 py-2 text-red-600 hover:bg-red-50 rounded"
+                    className="flex items-center w-full text-left px-3 py-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                   >
+                    <LogOut className="w-5 h-5 mr-3" />
                     Sign Out
                   </button>
                 </div>
-              </>
-            ) : (
-              <div className="border-t pt-3">
-                <button
-                  onClick={() => handleNavigation('/auth')}
-                  className="block w-full text-left px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                >
-                  Sign In
-                </button>
-              </div>
-            )}
+              ) : (
+                <div className="space-y-2">
+                  <button
+                    onClick={() => handleNavigation('/auth')}
+                    className="flex items-center w-full justify-center px-3 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    <LogIn className="w-5 h-5 mr-2" />
+                    Sign In
+                  </button>
+                  <button
+                    onClick={() => handleNavigation('/auth')}
+                    className="flex items-center w-full justify-center px-3 py-3 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors"
+                  >
+                    <UserPlus className="w-5 h-5 mr-2" />
+                    Sign Up
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
-        </>
-      )}
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 };

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -9,12 +9,11 @@ import {
   MenubarItem,
   MenubarMenu,
   MenubarSeparator,
-  MenubarSub,
-  MenubarSubContent,
-  MenubarSubTrigger,
   MenubarTrigger,
 } from '@/components/ui/menubar';
-import { Home, Menu, Contact, LogIn, UserPlus } from 'lucide-react';
+import { Home, Contact, LogIn, UserPlus } from 'lucide-react';
+import MobileNavbar from './MobileNavbar';
+import AuthModal from './AuthModal';
 
 const Navbar = () => {
   const { user } = useAuth();
@@ -47,99 +46,97 @@ const Navbar = () => {
             </button>
           </div>
 
-          {/* Menu Bar */}
-          <Menubar className="border-0 bg-transparent">
-            <MenubarMenu>
-              <MenubarTrigger className="flex items-center space-x-2 cursor-pointer">
-                <Home className="w-4 h-4" />
-                <span>Home</span>
-              </MenubarTrigger>
-              <MenubarContent>
-                <MenubarItem onClick={() => navigate('/')}>
-                  Latest Polls
-                </MenubarItem>
-                <MenubarItem onClick={() => navigate('/')}>
-                  Trending
-                </MenubarItem>
-              </MenubarContent>
-            </MenubarMenu>
-
-            <MenubarMenu>
-              <MenubarTrigger className="cursor-pointer">Categories</MenubarTrigger>
-              <MenubarContent>
-                {categories.map((category) => (
-                  <MenubarItem 
-                    key={category}
-                    onClick={() => navigate(`/?category=${encodeURIComponent(category)}`)}
-                  >
-                    {category}
+          {/* Desktop Menu Bar - Hidden on mobile */}
+          <div className="hidden lg:block">
+            <Menubar className="border-0 bg-transparent">
+              <MenubarMenu>
+                <MenubarTrigger className="flex items-center space-x-2 cursor-pointer">
+                  <Home className="w-4 h-4" />
+                  <span>Home</span>
+                </MenubarTrigger>
+                <MenubarContent>
+                  <MenubarItem onClick={() => navigate('/')}>
+                    Latest Polls
                   </MenubarItem>
-                ))}
-                <MenubarSeparator />
-                <MenubarItem onClick={() => navigate('/')}>
-                  All Categories
-                </MenubarItem>
-              </MenubarContent>
-            </MenubarMenu>
+                  <MenubarItem onClick={() => navigate('/?sort=trending')}>
+                    Trending
+                  </MenubarItem>
+                </MenubarContent>
+              </MenubarMenu>
 
-            <MenubarMenu>
-              <MenubarTrigger className="cursor-pointer">Popular Polls</MenubarTrigger>
-              <MenubarContent>
-                <MenubarItem onClick={() => navigate('/?sort=popular')}>
-                  Most Voted
-                </MenubarItem>
-                <MenubarItem onClick={() => navigate('/?sort=recent')}>
-                  Recent
-                </MenubarItem>
-                <MenubarItem onClick={() => navigate('/?sort=trending')}>
-                  Trending Today
-                </MenubarItem>
-              </MenubarContent>
-            </MenubarMenu>
+              <MenubarMenu>
+                <MenubarTrigger className="cursor-pointer">Categories</MenubarTrigger>
+                <MenubarContent>
+                  {categories.map((category) => (
+                    <MenubarItem 
+                      key={category}
+                      onClick={() => navigate(`/?category=${encodeURIComponent(category)}`)}
+                    >
+                      {category}
+                    </MenubarItem>
+                  ))}
+                  <MenubarSeparator />
+                  <MenubarItem onClick={() => navigate('/')}>
+                    All Categories
+                  </MenubarItem>
+                </MenubarContent>
+              </MenubarMenu>
 
-            <MenubarMenu>
-              <MenubarTrigger className="flex items-center space-x-2 cursor-pointer">
-                <Contact className="w-4 h-4" />
-                <span>Contact</span>
-              </MenubarTrigger>
-              <MenubarContent>
-                <MenubarItem>
-                  Support
-                </MenubarItem>
-                <MenubarItem>
-                  Feedback
-                </MenubarItem>
-                <MenubarItem>
-                  About Us
-                </MenubarItem>
-              </MenubarContent>
-            </MenubarMenu>
-          </Menubar>
+              <MenubarMenu>
+                <MenubarTrigger className="cursor-pointer">Popular Polls</MenubarTrigger>
+                <MenubarContent>
+                  <MenubarItem onClick={() => navigate('/?sort=popular')}>
+                    Most Voted
+                  </MenubarItem>
+                  <MenubarItem onClick={() => navigate('/?sort=recent')}>
+                    Recent
+                  </MenubarItem>
+                  <MenubarItem onClick={() => navigate('/?sort=trending')}>
+                    Trending Today
+                  </MenubarItem>
+                </MenubarContent>
+              </MenubarMenu>
 
-          {/* Auth Buttons */}
-          <div className="flex items-center space-x-4">
+              <MenubarMenu>
+                <MenubarTrigger className="flex items-center space-x-2 cursor-pointer">
+                  <Contact className="w-4 h-4" />
+                  <span>Contact</span>
+                </MenubarTrigger>
+                <MenubarContent>
+                  <MenubarItem>
+                    Support
+                  </MenubarItem>
+                  <MenubarItem>
+                    Feedback
+                  </MenubarItem>
+                  <MenubarItem>
+                    About Us
+                  </MenubarItem>
+                </MenubarContent>
+              </MenubarMenu>
+            </Menubar>
+          </div>
+
+          {/* Desktop Auth Buttons - Hidden on mobile */}
+          <div className="hidden lg:flex items-center space-x-4">
             {!user ? (
               <div className="flex space-x-2">
-                <Button
-                  onClick={() => navigate('/auth')}
-                  variant="outline"
-                  size="sm"
-                >
-                  <LogIn className="w-4 h-4 mr-2" />
-                  Sign In
-                </Button>
-                <Button
-                  onClick={() => navigate('/auth')}
-                  size="sm"
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  Sign Up
-                </Button>
+                <AuthModal defaultTab="signin">
+                  <Button variant="outline" size="sm">
+                    <LogIn className="w-4 h-4 mr-2" />
+                    Sign In
+                  </Button>
+                </AuthModal>
+                <AuthModal defaultTab="signup">
+                  <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Sign Up
+                  </Button>
+                </AuthModal>
               </div>
             ) : (
               <div className="flex items-center space-x-4">
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-gray-600 max-w-32 truncate">
                   Welcome, {user.user_metadata?.full_name || user.email}
                 </span>
                 <Button
@@ -149,18 +146,19 @@ const Navbar = () => {
                 >
                   Submit Poll
                 </Button>
-                {user && (
-                  <Button
-                    onClick={() => navigate('/profile')}
-                    variant="outline"
-                    size="sm"
-                  >
-                    Profile
-                  </Button>
-                )}
+                <Button
+                  onClick={() => navigate('/profile')}
+                  variant="outline"
+                  size="sm"
+                >
+                  Profile
+                </Button>
               </div>
             )}
           </div>
+
+          {/* Mobile Hamburger Menu */}
+          <MobileNavbar />
         </div>
       </div>
     </div>

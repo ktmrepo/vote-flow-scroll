@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import PollResult from './PollResult';
 import SocialShare from './SocialShare';
+import AuthModal from './AuthModal';
 import { useBookmarks } from '@/hooks/useBookmarks';
 import { Bookmark, BookmarkCheck } from 'lucide-react';
 
@@ -192,12 +193,11 @@ const PollCard = ({ poll, isActive, onVote }: PollCardProps) => {
         {/* Sign in button moved to bottom for non-logged in users */}
         {!user && (
           <div className="flex justify-center mt-6">
-            <Button 
-              onClick={() => window.location.href = '/auth'}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg text-sm font-medium"
-            >
-              Sign in to vote
-            </Button>
+            <AuthModal defaultTab="signin">
+              <Button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg text-sm font-medium">
+                Sign in to vote
+              </Button>
+            </AuthModal>
           </div>
         )}
 

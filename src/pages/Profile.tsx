@@ -1,9 +1,10 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 import ProfileStats from '@/components/ProfileStats';
 import ProfileInfo from '@/components/ProfileInfo';
 import ProfileActivity from '@/components/ProfileActivity';
@@ -70,9 +71,9 @@ const convertJsonToPollOptions = (jsonData: any): PollOption[] => {
 const Profile = () => {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [userPolls, setUserPolls] = useState<UserPoll[]>([]);
-  const [userVotes, setUserVotes] = useState<UserVote[]>([]);
+  const [profile, setProfile] = useState(null);
+  const [userPolls, setUserPolls] = useState([]);
+  const [userVotes, setUserVotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [formData, setFormData] = useState({
@@ -82,15 +83,7 @@ const Profile = () => {
     website: '',
   });
 
-  useEffect(() => {
-    if (user) {
-      fetchProfile();
-      fetchUserPolls();
-      fetchUserVotes();
-    }
-  }, [user]);
-
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -102,15 +95,14 @@ const Profile = () => {
 
       if (error) throw error;
 
-      const typedProfile = data as UserProfile;
-      setProfile(typedProfile);
+      setProfile(data);
       setFormData({
-        full_name: typedProfile.full_name || '',
-        bio: typedProfile.bio || '',
-        location: typedProfile.location || '',
-        website: typedProfile.website || '',
+        full_name: data.full_name || '',
+        bio: data.bio || '',
+        location: data.location || '',
+        website: data.website || '',
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error fetching profile:', error);
       toast({
         title: "Error fetching profile",
@@ -118,9 +110,9 @@ const Profile = () => {
         variant: "destructive",
       });
     }
-  };
+  }, [user, toast]);
 
-  const fetchUserPolls = async () => {
+  const fetchUserPolls = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -138,12 +130,12 @@ const Profile = () => {
       })) || [];
 
       setUserPolls(typedPolls);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error fetching user polls:', error);
     }
-  };
+  }, [user]);
 
-  const fetchUserVotes = async () => {
+  const fetchUserVotes = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -167,12 +159,12 @@ const Profile = () => {
       })) || [];
 
       setUserVotes(typedVotes);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error fetching user votes:', error);
     }
-  };
+  }, [user]);
 
-  const updateProfile = async (newFormData: typeof formData) => {
+  const updateProfile = useCallback(async (newFormData) => {
     if (!user) return;
 
     try {
@@ -196,7 +188,7 @@ const Profile = () => {
       });
 
       fetchProfile();
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: "Error updating profile",
         description: error.message,
@@ -205,39 +197,50 @@ const Profile = () => {
     } finally {
       setUpdating(false);
     }
-  };
+  }, [user, toast, fetchProfile]);
 
   useEffect(() => {
-    setLoading(false);
-  }, [profile, userPolls, userVotes]);
+    if (user) {
+      const fetchData = async () => {
+        await Promise.all([fetchProfile(), fetchUserPolls(), fetchUserVotes()]);
+        setLoading(false);
+      };
+      fetchData();
+    }
+  }, [user, fetchProfile, fetchUserPolls, fetchUserVotes]);
+
+  const pollsCount = useMemo(() => userPolls.length, [userPolls]);
+  const votesCount = useMemo(() => userVotes.length, [userVotes]);
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 flex flex-col">
         <Navbar />
-        <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
+        <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] flex-1">
           <div className="text-center">
             <h2 className="text-2xl font-bold text-gray-800 mb-4">Access Denied</h2>
             <p className="text-gray-600">Please sign in to view your profile.</p>
           </div>
         </div>
+        <Footer />
       </div>
     );
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 flex flex-col">
         <Navbar />
         <LoadingSpinner message="Loading profile..." />
+        <Footer />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 flex flex-col">
       <Navbar />
-      <div className="max-w-4xl mx-auto p-6 space-y-8">
+      <div className="max-w-4xl mx-auto p-6 space-y-8 flex-1">
         <div className="text-center">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Profile Settings</h1>
           <p className="text-gray-600">Manage your account information and preferences</p>
@@ -257,14 +260,15 @@ const Profile = () => {
 
         {/* User Statistics */}
         <ProfileStats 
-          pollsCount={userPolls.length} 
-          votesCount={userVotes.length}
+          pollsCount={pollsCount} 
+          votesCount={votesCount}
           userRole={profile?.role || 'user'}
         />
 
         {/* Recent Activity */}
         <ProfileActivity polls={userPolls} votes={userVotes} />
       </div>
+      <Footer />
     </div>
   );
 };
