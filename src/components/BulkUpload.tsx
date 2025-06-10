@@ -10,7 +10,6 @@ import { useAuth } from '@/contexts/AuthContext';
 
 const BulkUpload = () => {
   const [uploading, setUploading] = useState<string | null>(null);
-  const [uploadProgress, setUploadProgress] = useState<Record<string, any>>({});
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -67,7 +66,6 @@ poll-uuid-2,mushrooms,10`;
       const text = await file.text();
       const data = parseCSV(text);
       
-      // Create upload session
       const { data: uploadSession, error: sessionError } = await supabase
         .from('bulk_uploads')
         .insert({
@@ -81,7 +79,6 @@ poll-uuid-2,mushrooms,10`;
 
       if (sessionError) throw sessionError;
 
-      // Process based on upload type
       if (uploadType === 'users') {
         await processUserUpload(data, uploadSession.id);
       } else if (uploadType === 'polls') {
@@ -121,7 +118,6 @@ poll-uuid-2,mushrooms,10`;
 
     if (error) throw error;
 
-    // Process the upload
     const { error: processError } = await supabase.rpc('process_user_bulk_upload', {
       upload_session_id: sessionId
     });
@@ -156,7 +152,6 @@ poll-uuid-2,mushrooms,10`;
 
     if (error) throw error;
 
-    // Process the upload
     const { error: processError } = await supabase.rpc('process_poll_bulk_upload', {
       upload_session_id: sessionId
     });
@@ -165,18 +160,16 @@ poll-uuid-2,mushrooms,10`;
   };
 
   const processVoteUpload = async (data: any[], sessionId: string) => {
-    // For votes, we'll directly insert into the votes table
     for (const row of data) {
       const votesCount = parseInt(row.votes_count) || 1;
       
-      // Create multiple vote records to simulate the vote count
       for (let i = 0; i < votesCount; i++) {
         await supabase
           .from('votes')
           .insert({
             poll_id: row.poll_id,
             option_id: row.option_id,
-            user_id: user!.id // This would normally be different users
+            user_id: user!.id
           });
       }
     }
@@ -218,7 +211,7 @@ poll-uuid-2,mushrooms,10`;
               
               <div className="space-y-2">
                 <Button
-                  onClick={() => downloadTemplate(userTemplate, 'users_template.csv')}
+                  onClick={() => downloadTemplate(userTemplate, 'sample_users.csv')}
                   variant="outline"
                   className="mr-2"
                 >
@@ -254,7 +247,7 @@ poll-uuid-2,mushrooms,10`;
               
               <div className="space-y-2">
                 <Button
-                  onClick={() => downloadTemplate(pollTemplate, 'polls_template.csv')}
+                  onClick={() => downloadTemplate(pollTemplate, 'sample_polls.csv')}
                   variant="outline"
                   className="mr-2"
                 >
@@ -290,7 +283,7 @@ poll-uuid-2,mushrooms,10`;
               
               <div className="space-y-2">
                 <Button
-                  onClick={() => downloadTemplate(voteTemplate, 'votes_template.csv')}
+                  onClick={() => downloadTemplate(voteTemplate, 'sample_votes.csv')}
                   variant="outline"
                   className="mr-2"
                 >

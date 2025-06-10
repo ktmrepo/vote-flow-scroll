@@ -13,9 +13,8 @@ interface PollNavigationProps {
 const PollNavigation = ({ currentIndex, totalPolls, onPrevious, onNext }: PollNavigationProps) => {
   return (
     <>
-      {/* Desktop Navigation - positioned relative to poll container */}
+      {/* Desktop Navigation */}
       <div className="hidden md:block">
-        {/* Left Arrow */}
         <div className="absolute left-4 top-1/2 transform -translate-y-1/2 z-20">
           <Button
             onClick={onPrevious}
@@ -28,7 +27,6 @@ const PollNavigation = ({ currentIndex, totalPolls, onPrevious, onNext }: PollNa
           </Button>
         </div>
 
-        {/* Right Arrow */}
         <div className="absolute right-4 top-1/2 transform -translate-y-1/2 z-20">
           <Button
             onClick={onNext}
@@ -42,9 +40,9 @@ const PollNavigation = ({ currentIndex, totalPolls, onPrevious, onNext }: PollNa
         </div>
       </div>
 
-      {/* Mobile navigation - positioned at screen edges */}
+      {/* Mobile navigation */}
       <div className="block md:hidden">
-        <div className="fixed left-4 top-1/2 transform -translate-y-1/2 z-20">
+        <div className="absolute left-4 top-1/2 transform -translate-y-1/2 z-20">
           <Button
             onClick={onPrevious}
             disabled={currentIndex === 0}
@@ -56,7 +54,7 @@ const PollNavigation = ({ currentIndex, totalPolls, onPrevious, onNext }: PollNa
           </Button>
         </div>
 
-        <div className="fixed right-4 top-1/2 transform -translate-y-1/2 z-20">
+        <div className="absolute right-4 top-1/2 transform -translate-y-1/2 z-20">
           <Button
             onClick={onNext}
             disabled={currentIndex === totalPolls - 1}

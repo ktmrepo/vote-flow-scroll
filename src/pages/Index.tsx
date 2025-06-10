@@ -23,7 +23,6 @@ const Index = () => {
 
   console.log('Index component - Polls:', polls, 'Loading:', loading);
 
-  // Filter polls based on URL parameters
   const filteredPolls = polls.filter(poll => {
     const category = searchParams.get('category');
     if (category && poll.category !== category) return false;
@@ -48,12 +47,10 @@ const Index = () => {
     nextPoll();
   };
 
-  // Reset current poll index when filters change
   useEffect(() => {
     setCurrentPollIndex(0);
   }, [searchParams]);
 
-  // Keyboard navigation
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (e.key === 'ArrowRight' || e.key === ' ') {
@@ -69,7 +66,6 @@ const Index = () => {
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [currentPollIndex, filteredPolls.length]);
 
-  // Seed vote data when polls are loaded
   useEffect(() => {
     if (polls.length > 0) {
       seedVoteData().then((votesAdded) => {
@@ -105,10 +101,8 @@ const Index = () => {
       <Navbar />
       
       <div className="flex flex-1">
-        {/* User Dashboard Sidebar - Only for authenticated users */}
         {user && (
           <>
-            {/* Mobile overlay */}
             {showUserPanel && (
               <div 
                 className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden" 
@@ -116,7 +110,6 @@ const Index = () => {
               />
             )}
             
-            {/* Sidebar */}
             <div className={`
               fixed inset-y-0 left-0 z-50 w-72 bg-white shadow-xl transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 lg:z-auto lg:shadow-none
               ${showUserPanel ? 'translate-x-0' : '-translate-x-full'}
@@ -126,9 +119,7 @@ const Index = () => {
           </>
         )}
 
-        {/* Main Content */}
         <div className="flex-1 relative flex flex-col">
-          {/* Hamburger Menu Toggle (only for authenticated users) */}
           {user && (
             <div className="fixed top-20 left-4 z-30 lg:hidden">
               <Button
@@ -142,11 +133,8 @@ const Index = () => {
             </div>
           )}
 
-          {/* Poll Content Container with proper positioning and padding */}
-          <div className="flex-1 flex items-center justify-center p-4 lg:p-8 relative lg:pb-16">
-            {/* Main Poll Container - Centered with relative positioning for navigation */}
-            <div className="w-full max-w-4xl mx-auto relative">
-              {/* Navigation positioned relative to this container */}
+          <div className="flex-1 flex flex-col justify-center items-center relative pb-8 lg:pb-16">
+            <div className="w-full max-w-4xl mx-auto px-4 relative">
               <PollNavigation 
                 currentIndex={currentPollIndex} 
                 totalPolls={filteredPolls.length} 
@@ -154,13 +142,15 @@ const Index = () => {
                 onNext={nextPoll}
               />
 
-              <SwipeablePollContainer 
-                polls={filteredPolls}
-                currentIndex={currentPollIndex}
-                onVote={handleVote}
-                onNext={nextPoll}
-                onPrevious={prevPoll}
-              />
+              <div className="w-full">
+                <SwipeablePollContainer 
+                  polls={filteredPolls}
+                  currentIndex={currentPollIndex}
+                  onVote={handleVote}
+                  onNext={nextPoll}
+                  onPrevious={prevPoll}
+                />
+              </div>
             </div>
           </div>
         </div>

@@ -30,7 +30,6 @@ const PollCard = ({ poll, isActive, onVote }: PollCardProps) => {
       setHasVoted(!!userVote);
       setShowResult(!!userVote);
     } else {
-      // For non-authenticated users, always show results
       setShowResult(true);
       setHasVoted(false);
     }
@@ -44,7 +43,6 @@ const PollCard = ({ poll, isActive, onVote }: PollCardProps) => {
       setHasVoted(true);
       setShowResult(true);
       
-      // Set a timer to automatically move to next poll after 5 seconds
       const timer = setTimeout(() => {
         onVote?.();
       }, 5000);
@@ -57,7 +55,6 @@ const PollCard = ({ poll, isActive, onVote }: PollCardProps) => {
     await toggleBookmark(poll.id);
   };
 
-  // Clear timer when component unmounts or poll changes
   useEffect(() => {
     return () => {
       if (resultTimer) {
@@ -66,7 +63,6 @@ const PollCard = ({ poll, isActive, onVote }: PollCardProps) => {
     };
   }, [resultTimer]);
 
-  // Clear timer when poll becomes inactive
   useEffect(() => {
     if (!isActive && resultTimer) {
       clearTimeout(resultTimer);
@@ -94,13 +90,11 @@ const PollCard = ({ poll, isActive, onVote }: PollCardProps) => {
     return 'from-gray-50 to-gray-100';
   };
 
-  // Merge database votes with poll options
   const optionsWithVotes = poll.options.map(option => ({
     ...option,
     votes: votes[option.id] || 0
   }));
 
-  // Create poll object compatible with PollResult component
   const pollForResult = {
     id: parseInt(poll.id.replace(/-/g, '').substring(0, 8), 16),
     question: poll.title,
@@ -109,13 +103,8 @@ const PollCard = ({ poll, isActive, onVote }: PollCardProps) => {
   };
 
   return (
-    <div 
-      className={`flex items-center justify-center p-4 transition-all duration-700 min-h-screen md:min-h-[600px] ${
-        isActive ? 'opacity-100 scale-100' : 'opacity-70 scale-95'
-      }`}
-      data-poll-card
-    >
-      <div className={`w-full max-w-2xl bg-gradient-to-br ${getCategoryGradient()} rounded-2xl shadow-2xl p-4 sm:p-8 transform transition-all duration-500 mx-4 ${
+    <div className="w-full max-w-2xl mx-auto px-4">
+      <div className={`bg-gradient-to-br ${getCategoryGradient()} rounded-2xl shadow-2xl p-4 sm:p-8 transform transition-all duration-500 ${
         isActive ? 'animate-fade-in' : ''
       }`}>
         <div className="text-center mb-6 sm:mb-8">
@@ -142,7 +131,7 @@ const PollCard = ({ poll, isActive, onVote }: PollCardProps) => {
               )}
             </div>
           </div>
-          <h2 className="text-xl sm:text-3xl font-bold text-gray-800 mb-2 leading-tight px-2">
+          <h2 className="text-lg sm:text-3xl font-bold text-gray-800 mb-2 leading-tight px-2">
             {poll.title}
           </h2>
           {poll.description && (
@@ -190,7 +179,6 @@ const PollCard = ({ poll, isActive, onVote }: PollCardProps) => {
           </div>
         )}
 
-        {/* Sign in button moved to bottom for non-logged in users */}
         {!user && (
           <div className="flex justify-center mt-6">
             <AuthModal defaultTab="signin">

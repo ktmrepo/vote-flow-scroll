@@ -50,7 +50,7 @@ const SwipeablePollContainer = ({
   return (
     <div className="w-full overflow-hidden" {...handlers}>
       <div 
-        className="flex transition-transform duration-300 ease-in-out w-full"
+        className="flex transition-transform duration-300 ease-in-out"
         style={{ 
           transform: `translateX(-${currentIndex * 100}%)`,
         }}
@@ -58,7 +58,8 @@ const SwipeablePollContainer = ({
         {polls.map((poll, index) => (
           <div
             key={poll.id}
-            className="w-full flex-shrink-0 min-h-screen md:min-h-0"
+            className="w-full flex-shrink-0 flex items-center justify-center"
+            style={{ minHeight: 'calc(100vh - 140px)' }}
           >
             <PollCard
               poll={poll}
