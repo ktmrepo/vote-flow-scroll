@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +7,13 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Progress } from '@/components/ui/progress';
+
+interface PollOption {
+  id: string;
+  text: string;
+  votes?: number;
+  color?: string;
+}
 
 const BulkUpload = () => {
   const [uploading, setUploading] = useState<string | null>(null);
@@ -302,9 +308,9 @@ alex.reviewer@example.com,Alex Reviewer,user`;
           continue;
         }
 
-        // Find option by text
-        const options = Array.isArray(poll.options) ? poll.options : [];
-        const option = options.find((opt: any) => opt.text === row.option_text);
+        // Safely parse options and find the matching option
+        const options: PollOption[] = Array.isArray(poll.options) ? poll.options as PollOption[] : [];
+        const option = options.find((opt: PollOption) => opt.text === row.option_text);
 
         if (!option) {
           errors++;
@@ -354,7 +360,8 @@ alex.reviewer@example.com,Alex Reviewer,user`;
           continue;
         }
 
-        const options = Array.isArray(poll.options) ? poll.options : [];
+        // Safely parse options with proper typing
+        const options: PollOption[] = Array.isArray(poll.options) ? poll.options as PollOption[] : [];
         if (options.length === 0) {
           errors++;
           continue;
@@ -365,7 +372,7 @@ alex.reviewer@example.com,Alex Reviewer,user`;
 
         // Generate random votes
         for (let i = 0; i < totalVotes; i++) {
-          let selectedOption;
+          let selectedOption: PollOption;
           
           if (distributionType === 'equal') {
             selectedOption = options[i % options.length];
