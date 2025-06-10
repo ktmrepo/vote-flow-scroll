@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -309,7 +310,9 @@ alex.reviewer@example.com,Alex Reviewer,user`;
         }
 
         // Safely parse options and find the matching option
-        const options: PollOption[] = Array.isArray(poll.options) ? poll.options as PollOption[] : [];
+        const options: PollOption[] = Array.isArray(poll.options) 
+          ? (poll.options as unknown as PollOption[]) 
+          : [];
         const option = options.find((opt: PollOption) => opt.text === row.option_text);
 
         if (!option) {
@@ -361,7 +364,9 @@ alex.reviewer@example.com,Alex Reviewer,user`;
         }
 
         // Safely parse options with proper typing
-        const options: PollOption[] = Array.isArray(poll.options) ? poll.options as PollOption[] : [];
+        const options: PollOption[] = Array.isArray(poll.options) 
+          ? (poll.options as unknown as PollOption[]) 
+          : [];
         if (options.length === 0) {
           errors++;
           continue;
