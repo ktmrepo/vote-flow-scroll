@@ -51,6 +51,17 @@ const Index = () => {
     setCurrentPollIndex(0);
   }, [searchParams]);
 
+  // Handle direct poll navigation from URL
+  useEffect(() => {
+    const pollId = searchParams.get('poll');
+    if (pollId && filteredPolls.length > 0) {
+      const pollIndex = filteredPolls.findIndex(poll => poll.id === pollId);
+      if (pollIndex !== -1) {
+        setCurrentPollIndex(pollIndex);
+      }
+    }
+  }, [searchParams, filteredPolls]);
+
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (e.key === 'ArrowRight' || e.key === ' ') {
@@ -133,7 +144,7 @@ const Index = () => {
             </div>
           )}
 
-          <div className="flex-1 flex flex-col justify-center items-center relative pb-8 lg:pb-16">
+          <div className="flex-1 flex flex-col justify-center items-center relative pb-8 lg:pb-20">
             <div className="w-full max-w-4xl mx-auto px-4 relative">
               <PollNavigation 
                 currentIndex={currentPollIndex} 

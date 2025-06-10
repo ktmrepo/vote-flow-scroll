@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { User, TrendingUp, Heart, BarChart3, PlusCircle, Settings } from 'lucide-react';
+import { User, TrendingUp, Heart, BarChart3, PlusCircle, Settings, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import AdminPollApproval from './AdminPollApproval';
 
@@ -12,6 +12,23 @@ interface UserStats {
   pollsCreated: number;
   votesCast: number;
   favoritePolls: number;
+}
+
+interface RecentPoll {
+  id: string;
+  title: string;
+  created_at: string;
+  category: string | null;
+}
+
+interface RecentVote {
+  id: string;
+  created_at: string;
+  poll_id: string;
+  poll?: {
+    id: string;
+    title: string;
+  };
 }
 
 const UserDashboard = () => {
@@ -22,11 +39,14 @@ const UserDashboard = () => {
     votesCast: 0,
     favoritePolls: 0
   });
+  const [recentPolls, setRecentPolls] = useState<RecentPoll[]>([]);
+  const [recentVotes, setRecentVotes] = useState<RecentVote[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (user) {
       fetchUserStats();
+      fetchRecentActivity();
     }
   }, [user]);
 
@@ -56,6 +76,60 @@ const UserDashboard = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchRecentActivity = async () => {
+    if (!user) return;
+
+    try {
+      // Fetch recent polls created by user
+      const { data: polls } = await supabase
+        .from('polls')
+        .select('id, title, created_at, category')
+        .eq('created_by', user.id)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      // Fetch recent votes with poll information
+      const { data: votes } = await supabase
+        .from('votes')
+        .select(`
+          id,
+          created_at,
+          poll_id,
+          polls!inner(id, title)
+        `)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      setRecentPolls(polls || []);
+      
+      // Transform votes data to match our interface
+      const transformedVotes = votes?.map(vote => ({
+        id: vote.id,
+        created_at: vote.created_at,
+        poll_id: vote.poll_id,
+        poll: {
+          id: vote.polls.id,
+          title: vote.polls.title
+        }
+      })) || [];
+      
+      setRecentVotes(transformedVotes);
+    } catch (error) {
+      console.error('Error fetching recent activity:', error);
+    }
+  };
+
+  const handlePollClick = (pollId: string) => {
+    // Navigate to the poll - we'll use the main page with poll navigation
+    navigate(`/?poll=${pollId}`);
+  };
+
+  const handleVoteClick = (pollId: string) => {
+    // Navigate to the poll where the vote was cast
+    navigate(`/?poll=${pollId}`);
   };
 
   if (!user) {
@@ -183,18 +257,76 @@ const UserDashboard = () => {
           </Card>
         )}
 
-        {/* Recent Activity Placeholder */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Recent Activity</CardTitle>
-            <CardDescription>Your latest poll interactions</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-gray-500 text-center py-4">
-              Activity feed coming soon...
-            </p>
-          </CardContent>
-        </Card>
+        {/* Recent Activity */}
+        <div className="grid grid-cols-1 gap-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Recent Polls</CardTitle>
+              <CardDescription>Your latest created polls</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {recentPolls.length > 0 ? (
+                <div className="space-y-2">
+                  {recentPolls.map((poll) => (
+                    <div 
+                      key={poll.id} 
+                      className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors group"
+                      onClick={() => handlePollClick(poll.id)}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="font-medium text-sm group-hover:text-blue-600 transition-colors">
+                            {poll.title}
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            {poll.category} • {new Date(poll.created_at).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <ExternalLink className="w-4 h-4 text-gray-400 group-hover:text-blue-600 transition-colors" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 text-sm">No polls created yet.</p>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Recent Votes</CardTitle>
+              <CardDescription>Your latest poll interactions</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {recentVotes.length > 0 ? (
+                <div className="space-y-2">
+                  {recentVotes.map((vote) => (
+                    <div 
+                      key={vote.id} 
+                      className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors group"
+                      onClick={() => handleVoteClick(vote.poll_id)}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="font-medium text-sm group-hover:text-blue-600 transition-colors">
+                            {vote.poll?.title || "Unknown Poll"}
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            Voted on {new Date(vote.created_at).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <ExternalLink className="w-4 h-4 text-gray-400 group-hover:text-blue-600 transition-colors" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 text-sm">No votes cast yet.</p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
