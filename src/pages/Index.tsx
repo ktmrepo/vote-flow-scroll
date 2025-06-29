@@ -9,14 +9,12 @@ import EmptyPollsState from '@/components/EmptyPollsState';
 import HomePollCard from '@/components/HomePollCard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { TrendingUp, Clock, Star, BarChart3, Users, Vote } from 'lucide-react';
+import { TrendingUp, Clock, Star, BarChart3, Users, Vote, ArrowRight } from 'lucide-react';
 
 const Index = () => {
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { polls, loading } = usePolls();
-  const [activeSection, setActiveSection] = useState('latest');
 
   console.log('Index component - Polls:', polls, 'Loading:', loading);
 
@@ -28,8 +26,8 @@ const Index = () => {
   });
 
   // Categorize polls
-  const latestPolls = filteredPolls
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  const featuredPolls = filteredPolls
+    .filter(poll => poll.category === 'Technology' || poll.category === 'Entertainment')
     .slice(0, 6);
 
   const popularPolls = filteredPolls
@@ -44,17 +42,13 @@ const Index = () => {
     })
     .slice(0, 6);
 
-  const featuredPolls = filteredPolls
-    .filter(poll => poll.category === 'Technology' || poll.category === 'Entertainment')
-    .slice(0, 6);
-
   const unvotedPolls = user 
     ? filteredPolls.filter(poll => !poll.user_has_voted).slice(0, 6)
     : [];
 
-  useEffect(() => {
-    setActiveSection('latest');
-  }, [searchParams]);
+  const latestPolls = filteredPolls
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, 6);
 
   if (loading) {
     return (
@@ -88,7 +82,7 @@ const Index = () => {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {pollList.map((poll) => (
-          <div key={poll.id} className="transform transition-all duration-300 hover:scale-105">
+          <div key={poll.id} className="h-full">
             <HomePollCard poll={poll} />
           </div>
         ))}
@@ -109,6 +103,27 @@ const Index = () => {
   };
 
   const stats = getSectionStats();
+
+  const handleViewAllClick = (section: string) => {
+    // Navigate to a filtered view or dedicated page for each section
+    switch (section) {
+      case 'featured':
+        window.location.href = '/?category=Technology';
+        break;
+      case 'popular':
+        window.location.href = '/?sort=popular';
+        break;
+      case 'for-you':
+        // Could navigate to a personalized page
+        window.location.href = '/?filter=unvoted';
+        break;
+      case 'latest':
+        window.location.href = '/?sort=latest';
+        break;
+      default:
+        window.location.href = '/';
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 flex flex-col">
@@ -176,7 +191,7 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Polls Section */}
+        {/* Polls Section - Vertical Layout */}
         <div id="polls-section" className="py-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
@@ -188,98 +203,129 @@ const Index = () => {
               </p>
             </div>
 
-            <Tabs value={activeSection} onValueChange={setActiveSection} className="w-full">
-              <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 mb-8">
-                <TabsTrigger value="latest" className="flex items-center gap-2">
-                  <Clock className="w-4 h-4" />
-                  Latest
-                </TabsTrigger>
-                <TabsTrigger value="popular" className="flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4" />
-                  Popular
-                </TabsTrigger>
-                <TabsTrigger value="featured" className="flex items-center gap-2">
-                  <Star className="w-4 h-4" />
-                  Featured
-                </TabsTrigger>
-                {user && (
-                  <TabsTrigger value="for-you" className="flex items-center gap-2">
-                    <Vote className="w-4 h-4" />
-                    For You
-                  </TabsTrigger>
-                )}
-              </TabsList>
-
-              <TabsContent value="latest" className="space-y-6">
+            <div className="space-y-16">
+              {/* Featured Section */}
+              <div>
                 <Card>
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Clock className="w-5 h-5 text-blue-600" />
-                      Latest Polls
-                    </CardTitle>
-                    <CardDescription>
-                      Fresh polls from the community - be among the first to vote!
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {renderPollGrid(latestPolls, "No recent polls available")}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="popular" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <TrendingUp className="w-5 h-5 text-green-600" />
-                      Popular Polls
-                    </CardTitle>
-                    <CardDescription>
-                      Polls with the highest engagement from our community
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {renderPollGrid(popularPolls, "No popular polls available yet")}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="featured" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Star className="w-5 h-5 text-yellow-600" />
-                      Featured Polls
-                    </CardTitle>
-                    <CardDescription>
-                      Curated polls on trending topics in technology and entertainment
-                    </CardDescription>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="flex items-center gap-2">
+                          <Star className="w-5 h-5 text-yellow-600" />
+                          Featured Polls
+                        </CardTitle>
+                        <CardDescription>
+                          Curated polls on trending topics in technology and entertainment
+                        </CardDescription>
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => handleViewAllClick('featured')}
+                        className="flex items-center gap-2"
+                      >
+                        View All
+                        <ArrowRight className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </CardHeader>
                   <CardContent>
                     {renderPollGrid(featuredPolls, "No featured polls available")}
                   </CardContent>
                 </Card>
-              </TabsContent>
+              </div>
 
+              {/* Popular Section */}
+              <div>
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="flex items-center gap-2">
+                          <TrendingUp className="w-5 h-5 text-green-600" />
+                          Popular Polls
+                        </CardTitle>
+                        <CardDescription>
+                          Polls with the highest engagement from our community
+                        </CardDescription>
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => handleViewAllClick('popular')}
+                        className="flex items-center gap-2"
+                      >
+                        View All
+                        <ArrowRight className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {renderPollGrid(popularPolls, "No popular polls available yet")}
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* For You Section - Only show if user is logged in */}
               {user && (
-                <TabsContent value="for-you" className="space-y-6">
+                <div>
                   <Card>
                     <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Vote className="w-5 h-5 text-purple-600" />
-                        For You
-                      </CardTitle>
-                      <CardDescription>
-                        Polls you haven't voted on yet - make your voice heard!
-                      </CardDescription>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <CardTitle className="flex items-center gap-2">
+                            <Vote className="w-5 h-5 text-purple-600" />
+                            For You
+                          </CardTitle>
+                          <CardDescription>
+                            Polls you haven't voted on yet - make your voice heard!
+                          </CardDescription>
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          onClick={() => handleViewAllClick('for-you')}
+                          className="flex items-center gap-2"
+                        >
+                          View All
+                          <ArrowRight className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </CardHeader>
                     <CardContent>
                       {renderPollGrid(unvotedPolls, "You've voted on all available polls! Check back later for new ones.")}
                     </CardContent>
                   </Card>
-                </TabsContent>
+                </div>
               )}
-            </Tabs>
+
+              {/* Latest Section */}
+              <div>
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="flex items-center gap-2">
+                          <Clock className="w-5 h-5 text-blue-600" />
+                          Latest Polls
+                        </CardTitle>
+                        <CardDescription>
+                          Fresh polls from the community - be among the first to vote!
+                        </CardDescription>
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => handleViewAllClick('latest')}
+                        className="flex items-center gap-2"
+                      >
+                        View All
+                        <ArrowRight className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {renderPollGrid(latestPolls, "No recent polls available")}
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
 
             {/* Call to Action */}
             {!user && (

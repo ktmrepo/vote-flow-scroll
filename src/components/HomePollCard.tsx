@@ -23,7 +23,8 @@ const HomePollCard = ({ poll }: HomePollCardProps) => {
   };
 
   const handleVoteClick = () => {
-    navigate(`/?poll=${poll.id}`);
+    // Navigate to the poll viewing page with the specific poll
+    navigate(`/poll/${poll.id}`);
   };
 
   const getCategoryColor = () => {
@@ -49,8 +50,8 @@ const HomePollCard = ({ poll }: HomePollCardProps) => {
   const totalVotes = poll.options.reduce((sum, option) => sum + option.votes, 0);
 
   return (
-    <div className="w-full">
-      <div className={`bg-gradient-to-br ${getCategoryGradient()} rounded-2xl shadow-lg p-6 transform transition-all duration-300 hover:shadow-xl hover:-translate-y-1`}>
+    <div className="w-full h-full">
+      <div className={`bg-gradient-to-br ${getCategoryGradient()} rounded-2xl shadow-lg p-6 transform transition-all duration-300 hover:shadow-xl hover:-translate-y-1 h-full flex flex-col`}>
         <div className="text-center mb-6">
           <div className="flex items-center justify-between mb-4">
             <div className={`inline-block px-2 py-1 ${getCategoryColor()} text-white rounded-full text-xs font-semibold`}>
@@ -75,21 +76,21 @@ const HomePollCard = ({ poll }: HomePollCardProps) => {
               )}
             </div>
           </div>
-          <h2 className="text-base sm:text-lg font-bold text-gray-800 mb-4 leading-tight px-2">
+          <h2 className="text-base sm:text-lg font-bold text-gray-800 mb-4 leading-tight px-2 min-h-[3rem] flex items-center justify-center">
             {poll.title}
           </h2>
         </div>
 
-        <div className="text-center mb-6">
-          <p className="text-sm text-gray-600 mb-4">
+        <div className="text-center mb-6 flex-grow flex items-center justify-center">
+          <p className="text-sm text-gray-600">
             Total votes: {totalVotes.toLocaleString()}
           </p>
         </div>
 
-        <div className="flex justify-center">
+        <div className="flex justify-center mt-auto">
           <Button
             onClick={handleVoteClick}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg text-sm font-medium flex items-center gap-2"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg text-sm font-medium flex items-center gap-2 w-full justify-center"
           >
             <Vote className="w-4 h-4" />
             Vote on this poll

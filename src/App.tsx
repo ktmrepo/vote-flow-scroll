@@ -11,6 +11,7 @@ import Profile from "./pages/Profile";
 import SubmitPoll from "./pages/SubmitPoll";
 import ResetPassword from "./pages/ResetPassword";
 import AdminDashboard from "./pages/AdminDashboard";
+import PollView from "./pages/PollView";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/poll/:pollId" element={<PollView />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/admin-dashboard" element={<AdminDashboard />} />
