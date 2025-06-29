@@ -9,23 +9,57 @@ import EmptyPollsState from '@/components/EmptyPollsState';
 import HomePollCard from '@/components/HomePollCard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrendingUp, Clock, Star, BarChart3, Users, Vote, ArrowRight } from 'lucide-react';
+import { TrendingUp, Clock, Star, BarChart3, Users, Vote, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const Index = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const { polls, loading } = usePolls();
+  const [currentPage, setCurrentPage] = useState(1);
+  const pollsPerPage = 15;
 
   console.log('Index component - Polls:', polls, 'Loading:', loading);
 
-  // Filter polls based on category from URL params
+  // Check if we're on a category page
+  const category = searchParams.get('category');
+  const sort = searchParams.get('sort');
+  const filter = searchParams.get('filter');
+  const isCategoryPage = category || sort || filter;
+
+  // Filter polls based on URL params
   const filteredPolls = polls.filter(poll => {
-    const category = searchParams.get('category');
     if (category && poll.category !== category) return false;
     return true;
   });
 
-  // Categorize polls
+  // Sort polls based on URL params
+  const sortedPolls = [...filteredPolls].sort((a, b) => {
+    if (sort === 'popular') {
+      const aVotes = a.options.reduce((sum, option) => sum + option.votes, 0);
+      const bVotes = b.options.reduce((sum, option) => sum + option.votes, 0);
+      return bVotes - aVotes;
+    }
+    if (sort === 'latest') {
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    }
+    if (filter === 'unvoted' && user) {
+      return a.user_has_voted ? 1 : -1;
+    }
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  });
+
+  // Pagination logic
+  const totalPages = Math.ceil(sortedPolls.length / pollsPerPage);
+  const startIndex = (currentPage - 1) * pollsPerPage;
+  const endIndex = startIndex + pollsPerPage;
+  const currentPolls = sortedPolls.slice(startIndex, endIndex);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [category, sort, filter]);
+
+  // Categorize polls for homepage
   const featuredPolls = filteredPolls
     .filter(poll => poll.category === 'Technology' || poll.category === 'Entertainment')
     .slice(0, 6);
@@ -33,7 +67,7 @@ const Index = () => {
   const popularPolls = filteredPolls
     .filter(poll => {
       const totalVotes = poll.options.reduce((sum, option) => sum + option.votes, 0);
-      return totalVotes > 10; // Polls with more than 10 votes
+      return totalVotes > 10;
     })
     .sort((a, b) => {
       const aVotes = a.options.reduce((sum, option) => sum + option.votes, 0);
@@ -70,6 +104,36 @@ const Index = () => {
     );
   }
 
+  const handleViewAllClick = (section: string) => {
+    switch (section) {
+      case 'featured':
+        setSearchParams({ category: 'Technology' });
+        break;
+      case 'popular':
+        setSearchParams({ sort: 'popular' });
+        break;
+      case 'for-you':
+        setSearchParams({ filter: 'unvoted' });
+        break;
+      case 'latest':
+        setSearchParams({ sort: 'latest' });
+        break;
+    }
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const getPageTitle = () => {
+    if (category) return `${category} Polls`;
+    if (sort === 'popular') return 'Popular Polls';
+    if (sort === 'latest') return 'Latest Polls';
+    if (filter === 'unvoted') return 'For You';
+    return 'All Polls';
+  };
+
   const renderPollGrid = (pollList: typeof polls, emptyMessage: string) => {
     if (pollList.length === 0) {
       return (
@@ -90,6 +154,119 @@ const Index = () => {
     );
   };
 
+  const renderPagination = () => {
+    if (totalPages <= 1) return null;
+
+    const pages = [];
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+
+    return (
+      <div className="flex justify-center items-center space-x-2 mt-8">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => handlePageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+        >
+          <ChevronLeft className="w-4 h-4" />
+          Previous
+        </Button>
+
+        {startPage > 1 && (
+          <>
+            <Button
+              variant={1 === currentPage ? "default" : "outline"}
+              size="sm"
+              onClick={() => handlePageChange(1)}
+            >
+              1
+            </Button>
+            {startPage > 2 && <span className="px-2">...</span>}
+          </>
+        )}
+
+        {pages.map(page => (
+          <Button
+            key={page}
+            variant={page === currentPage ? "default" : "outline"}
+            size="sm"
+            onClick={() => handlePageChange(page)}
+          >
+            {page}
+          </Button>
+        ))}
+
+        {endPage < totalPages && (
+          <>
+            {endPage < totalPages - 1 && <span className="px-2">...</span>}
+            <Button
+              variant={totalPages === currentPage ? "default" : "outline"}
+              size="sm"
+              onClick={() => handlePageChange(totalPages)}
+            >
+              {totalPages}
+            </Button>
+          </>
+        )}
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => handlePageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+        >
+          Next
+          <ChevronRight className="w-4 h-4" />
+        </Button>
+      </div>
+    );
+  };
+
+  // If this is a category/filter page, show the filtered results
+  if (isCategoryPage) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 flex flex-col">
+        <Navbar />
+        
+        <div className="flex-1 py-8">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="mb-8">
+              <Button
+                variant="outline"
+                onClick={() => setSearchParams({})}
+                className="mb-4"
+              >
+                <ChevronLeft className="w-4 h-4 mr-2" />
+                Back to Home
+              </Button>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">{getPageTitle()}</h1>
+              <p className="text-gray-600">
+                Showing {currentPolls.length} of {sortedPolls.length} polls
+                {currentPage > 1 && ` (Page ${currentPage} of ${totalPages})`}
+              </p>
+            </div>
+
+            {renderPollGrid(currentPolls, `No polls found in this ${category ? 'category' : 'section'}.`)}
+            {renderPagination()}
+          </div>
+        </div>
+        
+        <Footer />
+      </div>
+    );
+  }
+
+  // Homepage layout
   const getSectionStats = () => {
     const totalVotes = filteredPolls.reduce((sum, poll) => 
       sum + poll.options.reduce((optSum, option) => optSum + option.votes, 0), 0
@@ -98,32 +275,11 @@ const Index = () => {
     return {
       totalPolls: filteredPolls.length,
       totalVotes,
-      activeUsers: Math.floor(totalVotes / 3), // Rough estimate
+      activeUsers: Math.floor(totalVotes / 3),
     };
   };
 
   const stats = getSectionStats();
-
-  const handleViewAllClick = (section: string) => {
-    // Navigate to a filtered view or dedicated page for each section
-    switch (section) {
-      case 'featured':
-        window.location.href = '/?category=Technology';
-        break;
-      case 'popular':
-        window.location.href = '/?sort=popular';
-        break;
-      case 'for-you':
-        // Could navigate to a personalized page
-        window.location.href = '/?filter=unvoted';
-        break;
-      case 'latest':
-        window.location.href = '/?sort=latest';
-        break;
-      default:
-        window.location.href = '/';
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 flex flex-col">
@@ -208,7 +364,7 @@ const Index = () => {
               <div>
                 <Card>
                   <CardHeader>
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-start justify-between">
                       <div>
                         <CardTitle className="flex items-center gap-2">
                           <Star className="w-5 h-5 text-yellow-600" />
@@ -218,6 +374,11 @@ const Index = () => {
                           Curated polls on trending topics in technology and entertainment
                         </CardDescription>
                       </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {renderPollGrid(featuredPolls, "No featured polls available")}
+                    <div className="flex justify-end mt-6">
                       <Button 
                         variant="outline" 
                         onClick={() => handleViewAllClick('featured')}
@@ -227,9 +388,6 @@ const Index = () => {
                         <ArrowRight className="w-4 h-4" />
                       </Button>
                     </div>
-                  </CardHeader>
-                  <CardContent>
-                    {renderPollGrid(featuredPolls, "No featured polls available")}
                   </CardContent>
                 </Card>
               </div>
@@ -238,7 +396,7 @@ const Index = () => {
               <div>
                 <Card>
                   <CardHeader>
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-start justify-between">
                       <div>
                         <CardTitle className="flex items-center gap-2">
                           <TrendingUp className="w-5 h-5 text-green-600" />
@@ -248,6 +406,11 @@ const Index = () => {
                           Polls with the highest engagement from our community
                         </CardDescription>
                       </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {renderPollGrid(popularPolls, "No popular polls available yet")}
+                    <div className="flex justify-end mt-6">
                       <Button 
                         variant="outline" 
                         onClick={() => handleViewAllClick('popular')}
@@ -257,9 +420,6 @@ const Index = () => {
                         <ArrowRight className="w-4 h-4" />
                       </Button>
                     </div>
-                  </CardHeader>
-                  <CardContent>
-                    {renderPollGrid(popularPolls, "No popular polls available yet")}
                   </CardContent>
                 </Card>
               </div>
@@ -269,7 +429,7 @@ const Index = () => {
                 <div>
                   <Card>
                     <CardHeader>
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-start justify-between">
                         <div>
                           <CardTitle className="flex items-center gap-2">
                             <Vote className="w-5 h-5 text-purple-600" />
@@ -279,6 +439,11 @@ const Index = () => {
                             Polls you haven't voted on yet - make your voice heard!
                           </CardDescription>
                         </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      {renderPollGrid(unvotedPolls, "You've voted on all available polls! Check back later for new ones.")}
+                      <div className="flex justify-end mt-6">
                         <Button 
                           variant="outline" 
                           onClick={() => handleViewAllClick('for-you')}
@@ -288,9 +453,6 @@ const Index = () => {
                           <ArrowRight className="w-4 h-4" />
                         </Button>
                       </div>
-                    </CardHeader>
-                    <CardContent>
-                      {renderPollGrid(unvotedPolls, "You've voted on all available polls! Check back later for new ones.")}
                     </CardContent>
                   </Card>
                 </div>
@@ -300,7 +462,7 @@ const Index = () => {
               <div>
                 <Card>
                   <CardHeader>
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-start justify-between">
                       <div>
                         <CardTitle className="flex items-center gap-2">
                           <Clock className="w-5 h-5 text-blue-600" />
@@ -310,6 +472,11 @@ const Index = () => {
                           Fresh polls from the community - be among the first to vote!
                         </CardDescription>
                       </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {renderPollGrid(latestPolls, "No recent polls available")}
+                    <div className="flex justify-end mt-6">
                       <Button 
                         variant="outline" 
                         onClick={() => handleViewAllClick('latest')}
@@ -319,9 +486,6 @@ const Index = () => {
                         <ArrowRight className="w-4 h-4" />
                       </Button>
                     </div>
-                  </CardHeader>
-                  <CardContent>
-                    {renderPollGrid(latestPolls, "No recent polls available")}
                   </CardContent>
                 </Card>
               </div>

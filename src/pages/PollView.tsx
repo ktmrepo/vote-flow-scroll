@@ -6,6 +6,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import PollCard from '@/components/PollCard';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import PollNavigation from '@/components/PollNavigation';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 
@@ -14,18 +15,85 @@ const PollView = () => {
   const navigate = useNavigate();
   const { polls, loading } = usePolls();
   const [currentPoll, setCurrentPoll] = useState(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [categoryPolls, setCategoryPolls] = useState([]);
+  const [autoAdvanceTimer, setAutoAdvanceTimer] = useState<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (polls.length > 0 && pollId) {
       const poll = polls.find(p => p.id === pollId);
-      setCurrentPoll(poll || null);
+      if (poll) {
+        setCurrentPoll(poll);
+        
+        // Get polls from the same category
+        const sameCategoryPolls = polls.filter(p => p.category === poll.category);
+        setCategoryPolls(sameCategoryPolls);
+        
+        // Find current index in category polls
+        const index = sameCategoryPolls.findIndex(p => p.id === pollId);
+        setCurrentIndex(index !== -1 ? index : 0);
+      }
     }
   }, [polls, pollId]);
 
-  const handleVote = () => {
-    // After voting, user can navigate back or to next poll
-    // For now, just stay on the same poll to show results
+  const nextPoll = () => {
+    if (currentIndex < categoryPolls.length - 1) {
+      const nextPollData = categoryPolls[currentIndex + 1];
+      navigate(`/poll/${nextPollData.id}`);
+    } else {
+      // If at the end, go to a random poll from the same category
+      const randomIndex = Math.floor(Math.random() * categoryPolls.length);
+      const randomPoll = categoryPolls[randomIndex];
+      if (randomPoll && randomPoll.id !== pollId) {
+        navigate(`/poll/${randomPoll.id}`);
+      }
+    }
   };
+
+  const prevPoll = () => {
+    if (currentIndex > 0) {
+      const prevPollData = categoryPolls[currentIndex - 1];
+      navigate(`/poll/${prevPollData.id}`);
+    } else {
+      // If at the beginning, go to the last poll
+      const lastPoll = categoryPolls[categoryPolls.length - 1];
+      if (lastPoll) {
+        navigate(`/poll/${lastPoll.id}`);
+      }
+    }
+  };
+
+  const handleVote = () => {
+    // Clear any existing timer
+    if (autoAdvanceTimer) {
+      clearTimeout(autoAdvanceTimer);
+    }
+
+    // Set a 5-second timer to advance to next poll
+    const timer = setTimeout(() => {
+      nextPoll();
+    }, 5000);
+    
+    setAutoAdvanceTimer(timer);
+  };
+
+  // Cleanup timer on component unmount
+  useEffect(() => {
+    return () => {
+      if (autoAdvanceTimer) {
+        clearTimeout(autoAdvanceTimer);
+      }
+    };
+  }, [autoAdvanceTimer]);
+
+  // Clear timer when navigating away
+  useEffect(() => {
+    return () => {
+      if (autoAdvanceTimer) {
+        clearTimeout(autoAdvanceTimer);
+      }
+    };
+  }, [pollId]);
 
   if (loading) {
     return (
@@ -73,6 +141,16 @@ const PollView = () => {
             </Button>
           </div>
 
+          {/* Navigation buttons for category polls */}
+          {categoryPolls.length > 1 && (
+            <PollNavigation 
+              currentIndex={currentIndex} 
+              totalPolls={categoryPolls.length} 
+              onPrevious={prevPoll} 
+              onNext={nextPoll}
+            />
+          )}
+
           <div className="w-full">
             <PollCard
               poll={currentPoll}
@@ -80,6 +158,39 @@ const PollView = () => {
               onVote={handleVote}
             />
           </div>
+
+          {/* Auto-advance notification */}
+          {autoAdvanceTimer && (
+            <div className="text-center mt-4">
+              <div className="bg-blue-100 border border-blue-300 rounded-lg p-3 inline-block">
+                <p className="text-blue-800 text-sm">
+                  Moving to next poll in 5 seconds... 
+                  <Button 
+                    variant="link" 
+                    size="sm" 
+                    className="ml-2 text-blue-600 p-0 h-auto"
+                    onClick={() => {
+                      if (autoAdvanceTimer) {
+                        clearTimeout(autoAdvanceTimer);
+                        setAutoAdvanceTimer(null);
+                      }
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Category info */}
+          {currentPoll.category && (
+            <div className="text-center mt-6">
+              <p className="text-gray-600 text-sm">
+                Poll {currentIndex + 1} of {categoryPolls.length} in {currentPoll.category}
+              </p>
+            </div>
+          )}
         </div>
       </div>
       
