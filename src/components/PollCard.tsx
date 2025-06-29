@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { DatabasePoll } from '@/hooks/usePolls';
 import { useVotes } from '@/hooks/useVotes';
@@ -22,7 +21,6 @@ const PollCard = ({ poll, isActive, onVote }: PollCardProps) => {
   const { user } = useAuth();
   const [hasVoted, setHasVoted] = useState(false);
   const [showResult, setShowResult] = useState(false);
-  const [resultTimer, setResultTimer] = useState<NodeJS.Timeout | null>(null);
   const isBookmarked = bookmarkedPolls.has(poll.id);
 
   useEffect(() => {
@@ -42,11 +40,7 @@ const PollCard = ({ poll, isActive, onVote }: PollCardProps) => {
     if (success) {
       setHasVoted(true);
       setShowResult(true);
-      
-      const timer = setTimeout(() => {
-        onVote?.();
-      }, 5000);
-      setResultTimer(timer);
+      onVote?.();
     }
   };
 
@@ -54,21 +48,6 @@ const PollCard = ({ poll, isActive, onVote }: PollCardProps) => {
     if (bookmarkLoading) return;
     await toggleBookmark(poll.id);
   };
-
-  useEffect(() => {
-    return () => {
-      if (resultTimer) {
-        clearTimeout(resultTimer);
-      }
-    };
-  }, [resultTimer]);
-
-  useEffect(() => {
-    if (!isActive && resultTimer) {
-      clearTimeout(resultTimer);
-      setResultTimer(null);
-    }
-  }, [isActive, resultTimer]);
 
   const getCategoryColor = () => {
     const category = poll.category?.toLowerCase() || '';
@@ -103,7 +82,7 @@ const PollCard = ({ poll, isActive, onVote }: PollCardProps) => {
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto px-4">
+    <div className="w-full max-w-2xl mx-auto px-4" data-poll-card>
       <div className={`bg-gradient-to-br ${getCategoryGradient()} rounded-2xl shadow-2xl p-4 sm:p-8 transform transition-all duration-500 ${
         isActive ? 'animate-fade-in' : ''
       }`}>
@@ -170,12 +149,6 @@ const PollCard = ({ poll, isActive, onVote }: PollCardProps) => {
               poll={pollForResult} 
               selectedOption={userVote || ''} 
             />
-            
-            {hasVoted && resultTimer && (
-              <div className="text-center mt-4">
-                <p className="text-sm text-gray-500">Moving to next poll in 5 seconds...</p>
-              </div>
-            )}
           </div>
         )}
 
@@ -188,12 +161,6 @@ const PollCard = ({ poll, isActive, onVote }: PollCardProps) => {
             </AuthModal>
           </div>
         )}
-
-        <div className="text-center mt-6 sm:mt-8">
-          <p className="text-xs sm:text-sm text-gray-500">
-            WPCS Poll
-          </p>
-        </div>
       </div>
     </div>
   );

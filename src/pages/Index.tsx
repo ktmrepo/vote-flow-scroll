@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePolls } from '@/hooks/usePolls';
+import { supabase } from '@/integrations/supabase/client';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import LoadingSpinner from '@/components/LoadingSpinner';
@@ -9,13 +10,18 @@ import EmptyPollsState from '@/components/EmptyPollsState';
 import HomePollCard from '@/components/HomePollCard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrendingUp, Clock, Star, BarChart3, Users, Vote, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
+import { TrendingUp, Clock, Star, BarChart3, Users, Vote, ArrowRight, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const { polls, loading } = usePolls();
   const [currentPage, setCurrentPage] = useState(1);
+  const [realTimeStats, setRealTimeStats] = useState({
+    totalPolls: 0,
+    totalVotes: 0,
+    activeParticipants: 0
+  });
   const pollsPerPage = 15;
 
   console.log('Index component - Polls:', polls, 'Loading:', loading);
@@ -25,6 +31,56 @@ const Index = () => {
   const sort = searchParams.get('sort');
   const filter = searchParams.get('filter');
   const isCategoryPage = category || sort || filter;
+
+  // Fetch real-time analytics
+  useEffect(() => {
+    const fetchRealTimeStats = async () => {
+      try {
+        // Get total polls count
+        const { count: pollsCount } = await supabase
+          .from('polls')
+          .select('*', { count: 'exact', head: true })
+          .eq('is_active', true);
+
+        // Get total votes count
+        const { count: votesCount } = await supabase
+          .from('votes')
+          .select('*', { count: 'exact', head: true });
+
+        // Get unique users who have voted (active participants)
+        const { data: uniqueVoters } = await supabase
+          .from('votes')
+          .select('user_id')
+          .limit(1000); // Limit for performance
+
+        const uniqueParticipants = uniqueVoters 
+          ? new Set(uniqueVoters.map(vote => vote.user_id)).size 
+          : 0;
+
+        setRealTimeStats({
+          totalPolls: pollsCount || 0,
+          totalVotes: votesCount || 0,
+          activeParticipants: uniqueParticipants
+        });
+      } catch (error) {
+        console.error('Error fetching real-time stats:', error);
+        // Fallback to calculated stats from polls data
+        const totalVotes = polls.reduce((sum, poll) => 
+          sum + poll.options.reduce((optSum, option) => optSum + option.votes, 0), 0
+        );
+        
+        setRealTimeStats({
+          totalPolls: polls.filter(poll => poll.is_active).length,
+          totalVotes,
+          activeParticipants: Math.floor(totalVotes / 3)
+        });
+      }
+    };
+
+    if (polls.length > 0) {
+      fetchRealTimeStats();
+    }
+  }, [polls]);
 
   // Filter polls based on URL params
   const filteredPolls = polls.filter(poll => {
@@ -44,6 +100,10 @@ const Index = () => {
     }
     if (filter === 'unvoted' && user) {
       return a.user_has_voted ? 1 : -1;
+    }
+    if (sort === 'all') {
+      // Random order for "All Categories"
+      return Math.random() - 0.5;
     }
     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
   });
@@ -65,10 +125,6 @@ const Index = () => {
     .slice(0, 6);
 
   const popularPolls = filteredPolls
-    .filter(poll => {
-      const totalVotes = poll.options.reduce((sum, option) => sum + option.votes, 0);
-      return totalVotes > 10;
-    })
     .sort((a, b) => {
       const aVotes = a.options.reduce((sum, option) => sum + option.votes, 0);
       const bVotes = b.options.reduce((sum, option) => sum + option.votes, 0);
@@ -130,6 +186,7 @@ const Index = () => {
     if (category) return `${category} Polls`;
     if (sort === 'popular') return 'Popular Polls';
     if (sort === 'latest') return 'Latest Polls';
+    if (sort === 'all') return 'All Categories';
     if (filter === 'unvoted') return 'For You';
     return 'All Polls';
   };
@@ -267,20 +324,6 @@ const Index = () => {
   }
 
   // Homepage layout
-  const getSectionStats = () => {
-    const totalVotes = filteredPolls.reduce((sum, poll) => 
-      sum + poll.options.reduce((optSum, option) => optSum + option.votes, 0), 0
-    );
-    
-    return {
-      totalPolls: filteredPolls.length,
-      totalVotes,
-      activeUsers: Math.floor(totalVotes / 3),
-    };
-  };
-
-  const stats = getSectionStats();
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 flex flex-col">
       <Navbar />
@@ -301,7 +344,6 @@ const Index = () => {
                 className="bg-white text-blue-600 hover:bg-gray-100 text-lg px-8 py-3"
                 onClick={() => document.getElementById('polls-section')?.scrollIntoView({ behavior: 'smooth' })}
               >
-                <Vote className="w-5 h-5 mr-2" />
                 Start Voting
               </Button>
               {user && (
@@ -311,6 +353,7 @@ const Index = () => {
                   className="border-white text-white hover:bg-white hover:text-blue-600 text-lg px-8 py-3"
                   onClick={() => window.location.href = '/submit'}
                 >
+                  <Plus className="w-5 h-5 mr-2" />
                   Create Poll
                 </Button>
               )}
@@ -326,21 +369,21 @@ const Index = () => {
                 <div className="flex justify-center mb-4">
                   <BarChart3 className="w-12 h-12 text-blue-600" />
                 </div>
-                <div className="text-3xl font-bold text-gray-900">{stats.totalPolls}</div>
+                <div className="text-3xl font-bold text-gray-900">{realTimeStats.totalPolls}</div>
                 <div className="text-gray-600">Active Polls</div>
               </div>
               <div className="text-center">
                 <div className="flex justify-center mb-4">
                   <TrendingUp className="w-12 h-12 text-green-600" />
                 </div>
-                <div className="text-3xl font-bold text-gray-900">{stats.totalVotes.toLocaleString()}</div>
+                <div className="text-3xl font-bold text-gray-900">{realTimeStats.totalVotes.toLocaleString()}</div>
                 <div className="text-gray-600">Total Votes</div>
               </div>
               <div className="text-center">
                 <div className="flex justify-center mb-4">
                   <Users className="w-12 h-12 text-purple-600" />
                 </div>
-                <div className="text-3xl font-bold text-gray-900">{stats.activeUsers}</div>
+                <div className="text-3xl font-bold text-gray-900">{realTimeStats.activeParticipants}</div>
                 <div className="text-gray-600">Active Participants</div>
               </div>
             </div>
@@ -403,7 +446,7 @@ const Index = () => {
                           Popular Polls
                         </CardTitle>
                         <CardDescription>
-                          Polls with the highest engagement from our community
+                          Polls with the highest number of votes from our community
                         </CardDescription>
                       </div>
                     </div>

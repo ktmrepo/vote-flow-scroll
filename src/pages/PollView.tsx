@@ -158,39 +158,6 @@ const PollView = () => {
               onVote={handleVote}
             />
           </div>
-
-          {/* Auto-advance notification */}
-          {autoAdvanceTimer && (
-            <div className="text-center mt-4">
-              <div className="bg-blue-100 border border-blue-300 rounded-lg p-3 inline-block">
-                <p className="text-blue-800 text-sm">
-                  Moving to next poll in 5 seconds... 
-                  <Button 
-                    variant="link" 
-                    size="sm" 
-                    className="ml-2 text-blue-600 p-0 h-auto"
-                    onClick={() => {
-                      if (autoAdvanceTimer) {
-                        clearTimeout(autoAdvanceTimer);
-                        setAutoAdvanceTimer(null);
-                      }
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Category info */}
-          {currentPoll.category && (
-            <div className="text-center mt-6">
-              <p className="text-gray-600 text-sm">
-                Poll {currentIndex + 1} of {categoryPolls.length} in {currentPoll.category}
-              </p>
-            </div>
-          )}
         </div>
       </div>
       

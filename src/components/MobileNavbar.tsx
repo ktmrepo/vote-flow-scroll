@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Menu, X, Home, Contact, LogIn, UserPlus, User, PlusCircle, LogOut, ChevronDown, ChevronRight } from 'lucide-react';
@@ -122,13 +121,7 @@ const MobileNavbar = () => {
                 className="flex items-center w-full text-left px-3 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 <Home className="w-5 h-5 mr-3" />
-                Latest Polls
-              </button>
-              <button
-                onClick={() => handleNavigation('/?sort=trending')}
-                className="flex items-center w-full text-left px-3 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors ml-6"
-              >
-                Trending
+                Home
               </button>
             </div>
 
@@ -137,7 +130,7 @@ const MobileNavbar = () => {
               <Collapsible open={categoriesOpen} onOpenChange={setCategoriesOpen}>
                 <CollapsibleTrigger asChild>
                   <button className="flex items-center justify-between w-full text-left px-3 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-                    <span className="font-medium">All Categories</span>
+                    <span className="font-medium">Categories</span>
                     {categoriesOpen ? (
                       <ChevronDown className="w-4 h-4" />
                     ) : (
@@ -156,10 +149,10 @@ const MobileNavbar = () => {
                     </button>
                   ))}
                   <button
-                    onClick={() => handleNavigation('/')}
+                    onClick={() => handleNavigation('/?sort=all')}
                     className="flex items-center w-full text-left px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors ml-6"
                   >
-                    View All
+                    All Categories
                   </button>
                 </CollapsibleContent>
               </Collapsible>
@@ -167,20 +160,11 @@ const MobileNavbar = () => {
 
             {/* Popular Polls Section */}
             <div className="space-y-1">
-              <div className="px-3 py-2 text-sm font-semibold text-gray-500 uppercase tracking-wider">
-                Popular
-              </div>
               <button
                 onClick={() => handleNavigation('/?sort=popular')}
-                className="flex items-center w-full text-left px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors ml-3"
+                className="flex items-center w-full text-left px-3 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
               >
-                Most Voted
-              </button>
-              <button
-                onClick={() => handleNavigation('/?sort=recent')}
-                className="flex items-center w-full text-left px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors ml-3"
-              >
-                Recent
+                Popular Polls
               </button>
             </div>
 

@@ -10,7 +10,7 @@ import {
   MenubarSeparator,
   MenubarTrigger,
 } from '@/components/ui/menubar';
-import { Home, Contact, LogIn, UserPlus, LogOut, Settings } from 'lucide-react';
+import { Contact, LogIn, UserPlus, LogOut, Settings } from 'lucide-react';
 import MobileNavbar from './MobileNavbar';
 import AuthModal from './AuthModal';
 
@@ -55,18 +55,12 @@ const Navbar = () => {
           <div className="hidden lg:block">
             <Menubar className="border-0 bg-transparent">
               <MenubarMenu>
-                <MenubarTrigger className="flex items-center space-x-2 cursor-pointer">
-                  <Home className="w-4 h-4" />
-                  <span>Home</span>
+                <MenubarTrigger 
+                  className="cursor-pointer"
+                  onClick={() => navigate('/')}
+                >
+                  Home
                 </MenubarTrigger>
-                <MenubarContent>
-                  <MenubarItem onClick={() => navigate('/')}>
-                    Latest Polls
-                  </MenubarItem>
-                  <MenubarItem onClick={() => navigate('/?sort=trending')}>
-                    Trending
-                  </MenubarItem>
-                </MenubarContent>
               </MenubarMenu>
 
               <MenubarMenu>
@@ -81,25 +75,19 @@ const Navbar = () => {
                     </MenubarItem>
                   ))}
                   <MenubarSeparator />
-                  <MenubarItem onClick={() => navigate('/')}>
+                  <MenubarItem onClick={() => navigate('/?sort=all')}>
                     All Categories
                   </MenubarItem>
                 </MenubarContent>
               </MenubarMenu>
 
               <MenubarMenu>
-                <MenubarTrigger className="cursor-pointer">Popular Polls</MenubarTrigger>
-                <MenubarContent>
-                  <MenubarItem onClick={() => navigate('/?sort=popular')}>
-                    Most Voted
-                  </MenubarItem>
-                  <MenubarItem onClick={() => navigate('/?sort=recent')}>
-                    Recent
-                  </MenubarItem>
-                  <MenubarItem onClick={() => navigate('/?sort=trending')}>
-                    Trending Today
-                  </MenubarItem>
-                </MenubarContent>
+                <MenubarTrigger 
+                  className="cursor-pointer"
+                  onClick={() => navigate('/?sort=popular')}
+                >
+                  Popular Polls
+                </MenubarTrigger>
               </MenubarMenu>
 
               <MenubarMenu>

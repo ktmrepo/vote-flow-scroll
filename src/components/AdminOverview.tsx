@@ -1,7 +1,7 @@
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart3, Users, TrendingUp, Eye, Clock } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AdminOverviewProps {
   analytics: {
@@ -14,6 +14,38 @@ interface AdminOverviewProps {
 }
 
 const AdminOverview = ({ analytics }: AdminOverviewProps) => {
+  const [categoryStats, setCategoryStats] = useState<Record<string, number>>({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchCategoryStats();
+  }, []);
+
+  const fetchCategoryStats = async () => {
+    try {
+      setLoading(true);
+      const { data: polls, error } = await supabase
+        .from('polls')
+        .select('category')
+        .eq('is_active', true);
+
+      if (error) throw error;
+
+      // Count polls by category
+      const categoryCount: Record<string, number> = {};
+      polls?.forEach(poll => {
+        const category = poll.category || 'General';
+        categoryCount[category] = (categoryCount[category] || 0) + 1;
+      });
+
+      setCategoryStats(categoryCount);
+    } catch (error) {
+      console.error('Error fetching category stats:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const statsCards = [
     {
       title: 'Total Polls',
@@ -108,6 +140,42 @@ const AdminOverview = ({ analytics }: AdminOverviewProps) => {
               </div>
             ))}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Category Analytics */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Polls by Category</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="text-center py-8">
+              <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading category statistics...</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {Object.entries(categoryStats)
+                .sort(([,a], [,b]) => b - a) // Sort by count descending
+                .map(([category, count]) => (
+                <div key={category} className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                  <div className="flex justify-between items-center">
+                    <h3 className="font-medium text-gray-900">{category}</h3>
+                    <span className="text-2xl font-bold text-blue-600">{count}</span>
+                  </div>
+                  <p className="text-sm text-gray-600 mt-1">
+                    {((count / analytics.activePolls) * 100).toFixed(1)}% of active polls
+                  </p>
+                </div>
+              ))}
+              {Object.keys(categoryStats).length === 0 && (
+                <div className="col-span-full text-center py-8 text-gray-500">
+                  No category data available
+                </div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 
