@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -12,7 +11,6 @@ import PollNavigation from '@/components/PollNavigation';
 import SwipeablePollContainer from '@/components/SwipeablePollContainer';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import EmptyPollsState from '@/components/EmptyPollsState';
-import { seedVoteData } from '@/utils/seedVoteData';
 
 const Index = () => {
   const [currentPollIndex, setCurrentPollIndex] = useState(0);
@@ -76,16 +74,6 @@ const Index = () => {
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [currentPollIndex, filteredPolls.length]);
-
-  useEffect(() => {
-    if (polls.length > 0) {
-      seedVoteData().then((votesAdded) => {
-        if (votesAdded > 0) {
-          console.log(`Added ${votesAdded} simulated votes to demonstrate engagement`);
-        }
-      });
-    }
-  }, [polls.length]);
 
   if (loading) {
     return (
