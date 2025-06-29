@@ -18,7 +18,7 @@ const PollView = () => {
   const { polls, loading } = usePolls();
   const [currentPoll, setCurrentPoll] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [categoryPolls, setCategoryPolls] = useState([]);
+  const [availablePolls, setAvailablePolls] = useState([]);
   const [autoAdvanceTimer, setAutoAdvanceTimer] = useState<NodeJS.Timeout | null>(null);
   const [showAdvanceMessage, setShowAdvanceMessage] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -30,16 +30,40 @@ const PollView = () => {
       if (poll) {
         setCurrentPoll(poll);
         
-        // Get polls from the same category
-        const sameCategoryPolls = polls.filter(p => p.category === poll.category);
-        setCategoryPolls(sameCategoryPolls);
+        // Get polls from the same category first
+        let sameCategoryPolls = polls.filter(p => p.category === poll.category);
         
-        // Find current index in category polls
+        // If user is logged in, prioritize unvoted polls
+        if (user) {
+          const unvotedCategoryPolls = sameCategoryPolls.filter(p => !p.user_has_voted);
+          const votedCategoryPolls = sameCategoryPolls.filter(p => p.user_has_voted);
+          sameCategoryPolls = [...unvotedCategoryPolls, ...votedCategoryPolls];
+        }
+        
+        // If no more polls in category or we've reached the end, add random polls
+        if (sameCategoryPolls.length <= 1) {
+          const otherPolls = polls.filter(p => p.category !== poll.category);
+          if (user) {
+            const unvotedOtherPolls = otherPolls.filter(p => !p.user_has_voted);
+            const votedOtherPolls = otherPolls.filter(p => p.user_has_voted);
+            sameCategoryPolls = [...sameCategoryPolls, ...unvotedOtherPolls, ...votedOtherPolls];
+          } else {
+            sameCategoryPolls = [...sameCategoryPolls, ...otherPolls];
+          }
+        }
+        
+        setAvailablePolls(sameCategoryPolls);
+        
+        // Find current index in available polls
         const index = sameCategoryPolls.findIndex(p => p.id === pollId);
         setCurrentIndex(index !== -1 ? index : 0);
       }
     }
-  }, [polls, pollId]);
+  }, [polls, pollId, user]);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const navigateWithAnimation = (targetPoll) => {
     setIsTransitioning(true);
@@ -54,20 +78,23 @@ const PollView = () => {
         .substring(0, 50);
       navigate(`/poll/${targetPoll.id}/${titleSlug}`);
       
+      // Scroll to top after navigation
       setTimeout(() => {
+        scrollToTop();
         setIsTransitioning(false);
       }, 100);
     }, 300);
   };
 
   const nextPoll = () => {
-    if (currentIndex < categoryPolls.length - 1) {
-      const nextPollData = categoryPolls[currentIndex + 1];
+    if (currentIndex < availablePolls.length - 1) {
+      const nextPollData = availablePolls[currentIndex + 1];
       navigateWithAnimation(nextPollData);
-    } else {
-      // If at the end, go to a random poll from the same category
-      const randomIndex = Math.floor(Math.random() * categoryPolls.length);
-      const randomPoll = categoryPolls[randomIndex];
+    } else if (availablePolls.length > 1) {
+      // If at the end, go to a random poll from available polls
+      const randomIndex = Math.floor(Math.random() * (availablePolls.length - 1));
+      const adjustedIndex = randomIndex >= currentIndex ? randomIndex + 1 : randomIndex;
+      const randomPoll = availablePolls[adjustedIndex];
       if (randomPoll && randomPoll.id !== pollId) {
         navigateWithAnimation(randomPoll);
       }
@@ -76,11 +103,11 @@ const PollView = () => {
 
   const prevPoll = () => {
     if (currentIndex > 0) {
-      const prevPollData = categoryPolls[currentIndex - 1];
+      const prevPollData = availablePolls[currentIndex - 1];
       navigateWithAnimation(prevPollData);
-    } else {
+    } else if (availablePolls.length > 1) {
       // If at the beginning, go to the last poll
-      const lastPoll = categoryPolls[categoryPolls.length - 1];
+      const lastPoll = availablePolls[availablePolls.length - 1];
       if (lastPoll) {
         navigateWithAnimation(lastPoll);
       }
@@ -177,11 +204,11 @@ const PollView = () => {
             </Button>
           </div>
 
-          {/* Navigation buttons for category polls */}
-          {categoryPolls.length > 1 && (
+          {/* Navigation buttons for available polls */}
+          {availablePolls.length > 1 && (
             <PollNavigation 
               currentIndex={currentIndex} 
-              totalPolls={categoryPolls.length} 
+              totalPolls={availablePolls.length} 
               onPrevious={prevPoll} 
               onNext={nextPoll}
             />
@@ -197,36 +224,10 @@ const PollView = () => {
                 poll={currentPoll}
                 isActive={true}
                 onVote={handleVote}
+                showAdvanceMessage={showAdvanceMessage}
+                onCancelAutoAdvance={cancelAutoAdvance}
+                userHasVoted={user && userVote}
               />
-              
-              {/* Show advance message and already voted notice below options */}
-              {(showAdvanceMessage || (user && userVote)) && (
-                <div className="mt-4 bg-white/90 backdrop-blur-sm rounded-lg p-4 border border-gray-200 shadow-lg">
-                  {user && userVote && (
-                    <div className="text-center mb-2">
-                      <p className="text-sm text-blue-600 font-medium">
-                        ✓ You've already voted on this poll
-                      </p>
-                    </div>
-                  )}
-                  
-                  {showAdvanceMessage && (
-                    <div className="text-center">
-                      <p className="text-sm text-gray-600 mb-2">
-                        Moving to next poll in 5 seconds...
-                      </p>
-                      <Button
-                        onClick={cancelAutoAdvance}
-                        variant="outline"
-                        size="sm"
-                        className="text-xs"
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
           </div>
         </div>

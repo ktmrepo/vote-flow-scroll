@@ -13,9 +13,19 @@ interface PollCardProps {
   poll: DatabasePoll;
   isActive: boolean;
   onVote?: () => void;
+  showAdvanceMessage?: boolean;
+  onCancelAutoAdvance?: () => void;
+  userHasVoted?: boolean;
 }
 
-const PollCard = ({ poll, isActive, onVote }: PollCardProps) => {
+const PollCard = ({ 
+  poll, 
+  isActive, 
+  onVote, 
+  showAdvanceMessage = false, 
+  onCancelAutoAdvance,
+  userHasVoted = false
+}: PollCardProps) => {
   const { userVote, votes, loading, castVote } = useVotes(poll.id);
   const { bookmarkedPolls, toggleBookmark, loading: bookmarkLoading } = useBookmarks();
   const { user } = useAuth();
@@ -142,6 +152,33 @@ const PollCard = ({ poll, isActive, onVote }: PollCardProps) => {
                 </div>
               </button>
             ))}
+            
+            {/* Status messages inside the poll card */}
+            {(showAdvanceMessage || userHasVoted) && (
+              <div className="mt-4 text-center">
+                {userHasVoted && (
+                  <p className="text-sm text-blue-600 font-medium mb-2">
+                    ✓ You've already voted on this poll
+                  </p>
+                )}
+                
+                {showAdvanceMessage && (
+                  <div>
+                    <p className="text-sm text-gray-600 mb-2">
+                      Moving to next poll in 5 seconds...
+                    </p>
+                    <Button
+                      onClick={onCancelAutoAdvance}
+                      variant="outline"
+                      size="sm"
+                      className="text-xs"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         ) : (
           <div className="space-y-4">
@@ -149,6 +186,33 @@ const PollCard = ({ poll, isActive, onVote }: PollCardProps) => {
               poll={pollForResult} 
               selectedOption={userVote || ''} 
             />
+            
+            {/* Status messages inside the poll card for results view */}
+            {(showAdvanceMessage || userHasVoted) && (
+              <div className="text-center">
+                {userHasVoted && (
+                  <p className="text-sm text-blue-600 font-medium mb-2">
+                    ✓ You've already voted on this poll
+                  </p>
+                )}
+                
+                {showAdvanceMessage && (
+                  <div>
+                    <p className="text-sm text-gray-600 mb-2">
+                      Moving to next poll in 5 seconds...
+                    </p>
+                    <Button
+                      onClick={onCancelAutoAdvance}
+                      variant="outline"
+                      size="sm"
+                      className="text-xs"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 

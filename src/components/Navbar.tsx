@@ -10,7 +10,7 @@ import {
   MenubarSeparator,
   MenubarTrigger,
 } from '@/components/ui/menubar';
-import { Contact, LogIn, UserPlus, LogOut, Settings } from 'lucide-react';
+import { Contact, LogIn, UserPlus, LogOut, Settings, User } from 'lucide-react';
 import MobileNavbar from './MobileNavbar';
 import AuthModal from './AuthModal';
 
@@ -34,6 +34,8 @@ const Navbar = () => {
   const handleUserNameClick = () => {
     if (isAdmin) {
       navigate('/admin-dashboard');
+    } else {
+      navigate('/profile');
     }
   };
 
@@ -131,11 +133,10 @@ const Navbar = () => {
               <div className="flex items-center space-x-4">
                 <button
                   onClick={handleUserNameClick}
-                  className={`text-sm text-gray-600 max-w-32 truncate hover:text-gray-800 transition-colors flex items-center gap-1 ${
-                    isAdmin ? 'cursor-pointer' : 'cursor-default'
-                  }`}
+                  className="text-sm text-gray-600 max-w-32 truncate hover:text-gray-800 transition-colors flex items-center gap-1 cursor-pointer"
                 >
-                  Welcome, {user.user_metadata?.full_name || user.email}
+                  <User className="w-4 h-4" />
+                  {user.user_metadata?.full_name || user.email}
                   {isAdmin && <Settings className="w-3 h-3" />}
                 </button>
                 <Button

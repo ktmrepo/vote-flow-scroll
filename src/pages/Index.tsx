@@ -21,7 +21,7 @@ const Index = () => {
   const [realTimeStats, setRealTimeStats] = useState({
     totalPolls: 0,
     totalVotes: 0,
-    activeParticipants: 0
+    totalUsers: 0
   });
   const [trendingPolls, setTrendingPolls] = useState([]);
   const pollsPerPage = 15;
@@ -49,7 +49,7 @@ const Index = () => {
           .from('votes')
           .select('*', { count: 'exact', head: true });
 
-        // Get total users count (Active Participants = total registered users)
+        // Get total users count (All registered users)
         const { count: usersCount } = await supabase
           .from('profiles')
           .select('*', { count: 'exact', head: true });
@@ -57,7 +57,7 @@ const Index = () => {
         setRealTimeStats({
           totalPolls: pollsCount || 0,
           totalVotes: votesCount || 0,
-          activeParticipants: usersCount || 0
+          totalUsers: usersCount || 0
         });
       } catch (error) {
         console.error('Error fetching real-time stats:', error);
@@ -69,7 +69,7 @@ const Index = () => {
         setRealTimeStats({
           totalPolls: polls.filter(poll => poll.is_active).length,
           totalVotes,
-          activeParticipants: Math.floor(totalVotes / 3)
+          totalUsers: Math.floor(totalVotes / 3)
         });
       }
     };
@@ -420,8 +420,8 @@ const Index = () => {
                 <div className="flex justify-center mb-4">
                   <Users className="w-12 h-12 text-purple-600" />
                 </div>
-                <div className="text-3xl font-bold text-gray-900">{realTimeStats.activeParticipants}</div>
-                <div className="text-gray-600">Active Participants</div>
+                <div className="text-3xl font-bold text-gray-900">{realTimeStats.totalUsers}</div>
+                <div className="text-gray-600">Registered Users</div>
               </div>
             </div>
           </div>

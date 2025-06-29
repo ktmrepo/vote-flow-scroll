@@ -76,7 +76,8 @@ const TrendingPollCard = ({ poll }: TrendingPollCardProps) => {
               <div className={`inline-block px-2 py-1 ${getCategoryColor()} text-white rounded-full text-xs font-semibold`}>
                 {poll.category}
               </div>
-              <div className="flex items-center gap-1 bg-red-100 text-red-600 px-2 py-1 rounded-full text-xs font-semibold">
+              {/* Hide trending tag on mobile */}
+              <div className="hidden sm:flex items-center gap-1 bg-red-100 text-red-600 px-2 py-1 rounded-full text-xs font-semibold">
                 <TrendingUp className="w-3 h-3" />
                 Trending
               </div>
