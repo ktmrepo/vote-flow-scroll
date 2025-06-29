@@ -2,11 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePolls } from '@/hooks/usePolls';
-import UserDashboard from '@/components/UserDashboard';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { Button } from '@/components/ui/button';
-import { Menu, X } from 'lucide-react';
 import PollNavigation from '@/components/PollNavigation';
 import SwipeablePollContainer from '@/components/SwipeablePollContainer';
 import LoadingSpinner from '@/components/LoadingSpinner';
@@ -14,10 +11,8 @@ import EmptyPollsState from '@/components/EmptyPollsState';
 
 const Index = () => {
   const [currentPollIndex, setCurrentPollIndex] = useState(0);
-  const [showUserPanel, setShowUserPanel] = useState(false);
   const [searchParams] = useSearchParams();
   const { polls, loading } = usePolls();
-  const { user } = useAuth();
 
   console.log('Index component - Polls:', polls, 'Loading:', loading);
 
@@ -99,58 +94,23 @@ const Index = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 flex flex-col">
       <Navbar />
       
-      <div className="flex flex-1">
-        {user && (
-          <>
-            {showUserPanel && (
-              <div 
-                className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden" 
-                onClick={() => setShowUserPanel(false)} 
-              />
-            )}
-            
-            <div className={`
-              fixed inset-y-0 left-0 z-50 w-72 bg-white shadow-xl transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 lg:z-auto lg:shadow-none
-              ${showUserPanel ? 'translate-x-0' : '-translate-x-full'}
-            `}>
-              <UserDashboard />
-            </div>
-          </>
-        )}
+      <div className="flex-1 flex flex-col justify-center items-center relative pb-8 lg:pb-20">
+        <div className="w-full max-w-4xl mx-auto px-4 relative">
+          <PollNavigation 
+            currentIndex={currentPollIndex} 
+            totalPolls={filteredPolls.length} 
+            onPrevious={prevPoll} 
+            onNext={nextPoll}
+          />
 
-        <div className="flex-1 relative flex flex-col">
-          {user && (
-            <div className="fixed top-20 left-4 z-30 lg:hidden">
-              <Button
-                onClick={() => setShowUserPanel(!showUserPanel)}
-                variant="outline"
-                size="sm"
-                className="bg-white/90 backdrop-blur-sm border-gray-200 shadow-md hover:bg-white p-2"
-              >
-                {showUserPanel ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
-              </Button>
-            </div>
-          )}
-
-          <div className="flex-1 flex flex-col justify-center items-center relative pb-8 lg:pb-20">
-            <div className="w-full max-w-4xl mx-auto px-4 relative">
-              <PollNavigation 
-                currentIndex={currentPollIndex} 
-                totalPolls={filteredPolls.length} 
-                onPrevious={prevPoll} 
-                onNext={nextPoll}
-              />
-
-              <div className="w-full">
-                <SwipeablePollContainer 
-                  polls={filteredPolls}
-                  currentIndex={currentPollIndex}
-                  onVote={handleVote}
-                  onNext={nextPoll}
-                  onPrevious={prevPoll}
-                />
-              </div>
-            </div>
+          <div className="w-full">
+            <SwipeablePollContainer 
+              polls={filteredPolls}
+              currentIndex={currentPollIndex}
+              onVote={handleVote}
+              onNext={nextPoll}
+              onPrevious={prevPoll}
+            />
           </div>
         </div>
       </div>

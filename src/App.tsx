@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,6 +10,7 @@ import Admin from "./pages/Admin";
 import Profile from "./pages/Profile";
 import SubmitPoll from "./pages/SubmitPoll";
 import ResetPassword from "./pages/ResetPassword";
+import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +26,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/admin-dashboard" element={<AdminDashboard />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/submit" element={<SubmitPoll />} />
             <Route path="/reset-password" element={<ResetPassword />} />
