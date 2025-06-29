@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,12 +29,12 @@ mike.user@example.com,Mike User,user
 sarah.moderator@example.com,Sarah Moderator,user
 alex.reviewer@example.com,Alex Reviewer,user`;
 
-  const pollTemplate = `title,description,category,option1,option2,option3,option4,option5
-"What's your favorite programming language?","Choose your preferred programming language for web development",Technology,JavaScript,Python,Java,C++,Go
-"Best pizza topping?","Vote for the ultimate pizza topping",Food & Drink,Pepperoni,Mushrooms,Cheese,Pineapple,Sausage
-"Preferred workout time?","When do you prefer to exercise?",Health & Fitness,Morning,Afternoon,Evening,Night,
-"Best social media platform?","Which platform do you use most?",Social Media,Instagram,Twitter,Facebook,TikTok,LinkedIn
-"Favorite movie genre?","What type of movies do you enjoy most?",Entertainment,Action,Comedy,Drama,Horror,Sci-Fi`;
+  const pollTemplate = `title,description,category,option1,option2,option3,option4,tags
+"What's your favorite programming language?","Choose your preferred programming language for web development",Technology,JavaScript,Python,Java,C++,"programming,development,coding"
+"Best pizza topping?","Vote for the ultimate pizza topping","Food & Drink",Pepperoni,Mushrooms,Cheese,Pineapple,"food,pizza,italian"
+"Preferred workout time?","When do you prefer to exercise?","Health & Fitness",Morning,Afternoon,Evening,Night,"fitness,health,exercise"
+"Best social media platform?","Which platform do you use most?","Social Media",Instagram,Twitter,Facebook,TikTok,"social,media,networking"
+"Favorite movie genre?","What type of movies do you enjoy most?",Entertainment,Action,Comedy,Drama,Horror,"movies,entertainment,cinema"`;
 
   const voteTemplate = `poll_title,user_email,option_text,votes_count
 "What's your favorite programming language?",john.doe@example.com,JavaScript,1
@@ -253,18 +252,25 @@ alex.reviewer@example.com,Alex Reviewer,user`;
 
     for (const row of data) {
       try {
-        const options = [row.option1, row.option2, row.option3, row.option4, row.option5]
+        // Extract options from the new format
+        const options = [row.option1, row.option2, row.option3, row.option4]
           .filter(Boolean)
           .map((text, index) => ({
             id: text.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, ''),
             text: text.trim(),
             votes: 0,
-            color: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][index] || '#6b7280'
+            color: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444'][index] || '#6b7280'
           }));
 
         if (options.length < 2) {
           errors++;
           continue;
+        }
+
+        // Parse tags if provided
+        let tags: string[] = [];
+        if (row.tags && row.tags.trim()) {
+          tags = row.tags.split(',').map((tag: string) => tag.trim()).filter(Boolean);
         }
 
         const { error } = await supabase
@@ -274,6 +280,7 @@ alex.reviewer@example.com,Alex Reviewer,user`;
             description: row.description || null,
             category: row.category || 'General',
             options: options,
+            tags: tags.length > 0 ? tags : null,
             created_by: user!.id,
             is_active: true
           });
@@ -495,6 +502,8 @@ alex.reviewer@example.com,Alex Reviewer,user`;
               <ul className="text-sm text-blue-800 mt-2 space-y-1 list-disc list-inside">
                 <li>Always download and review the CSV templates before uploading</li>
                 <li>Ensure your CSV files follow the exact format shown in templates</li>
+                <li>For polls: Use format title,description,category,option1,option2,option3,option4,tags</li>
+                <li>Tags should be comma-separated within quotes (e.g., "tag1,tag2,tag3")</li>
                 <li>Large files may take several minutes to process</li>
                 <li>Failed records will be skipped with error reporting</li>
               </ul>
@@ -536,7 +545,7 @@ alex.reviewer@example.com,Alex Reviewer,user`;
           <TabsContent value="polls" className="space-y-4">
             <UploadSection
               title="Upload Polls"
-              description="Upload poll questions with options and categories"
+              description="Upload poll questions with options, categories, and tags in the new format"
               icon={BarChart3}
               uploadType="polls"
               template={pollTemplate}
