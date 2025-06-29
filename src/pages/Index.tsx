@@ -6,7 +6,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import EmptyPollsState from '@/components/EmptyPollsState';
-import PollCard from '@/components/PollCard';
+import HomePollCard from '@/components/HomePollCard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -89,7 +89,7 @@ const Index = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {pollList.map((poll) => (
           <div key={poll.id} className="transform transition-all duration-300 hover:scale-105">
-            <PollCard poll={poll} isActive={true} />
+            <HomePollCard poll={poll} />
           </div>
         ))}
       </div>
