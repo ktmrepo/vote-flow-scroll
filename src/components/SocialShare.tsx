@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Share2, Facebook, Twitter, Link } from 'lucide-react';
@@ -32,12 +31,22 @@ const SocialShare = ({ pollId, pollTitle }: SocialShareProps) => {
     }
   };
 
+  const generatePollUrl = () => {
+    const titleSlug = pollTitle
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+      .replace(/\s+/g, '-') // Replace spaces with hyphens
+      .replace(/-+/g, '-') // Replace multiple hyphens with single
+      .trim()
+      .substring(0, 50); // Limit length
+
+    return `${window.location.origin}/poll/${pollId}/${titleSlug}`;
+  };
+
   const shareOnFacebook = async () => {
     setIsSharing(true);
-    const screenshot = await captureScreenshot();
-    const pollUrl = `${window.location.origin}/?poll=${pollId}`;
+    const pollUrl = generatePollUrl();
     
-    // For Facebook, we'll just share the URL for now
     const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(pollUrl)}`;
     window.open(facebookUrl, '_blank', 'width=600,height=400');
     setIsSharing(false);
@@ -45,8 +54,7 @@ const SocialShare = ({ pollId, pollTitle }: SocialShareProps) => {
 
   const shareOnTwitter = async () => {
     setIsSharing(true);
-    const screenshot = await captureScreenshot();
-    const pollUrl = `${window.location.origin}/?poll=${pollId}`;
+    const pollUrl = generatePollUrl();
     const text = `Check out this poll: ${pollTitle}`;
     
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(pollUrl)}`;
@@ -55,7 +63,7 @@ const SocialShare = ({ pollId, pollTitle }: SocialShareProps) => {
   };
 
   const copyLink = () => {
-    const pollUrl = `${window.location.origin}/?poll=${pollId}`;
+    const pollUrl = generatePollUrl();
     navigator.clipboard.writeText(pollUrl);
     toast({
       title: "Link copied!",

@@ -47,20 +47,15 @@ const Index = () => {
           .from('votes')
           .select('*', { count: 'exact', head: true });
 
-        // Get unique users who have voted (active participants)
-        const { data: uniqueVoters } = await supabase
-          .from('votes')
-          .select('user_id')
-          .limit(1000); // Limit for performance
-
-        const uniqueParticipants = uniqueVoters 
-          ? new Set(uniqueVoters.map(vote => vote.user_id)).size 
-          : 0;
+        // Get total users count (Active Participants = total registered users)
+        const { count: usersCount } = await supabase
+          .from('profiles')
+          .select('*', { count: 'exact', head: true });
 
         setRealTimeStats({
           totalPolls: pollsCount || 0,
           totalVotes: votesCount || 0,
-          activeParticipants: uniqueParticipants
+          activeParticipants: usersCount || 0
         });
       } catch (error) {
         console.error('Error fetching real-time stats:', error);

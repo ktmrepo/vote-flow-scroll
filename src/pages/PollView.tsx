@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePolls } from '@/hooks/usePolls';
+import { useVotes } from '@/hooks/useVotes';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import PollCard from '@/components/PollCard';
@@ -13,11 +14,14 @@ import { ArrowLeft } from 'lucide-react';
 const PollView = () => {
   const { pollId } = useParams<{ pollId: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { polls, loading } = usePolls();
   const [currentPoll, setCurrentPoll] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [categoryPolls, setCategoryPolls] = useState([]);
   const [autoAdvanceTimer, setAutoAdvanceTimer] = useState<NodeJS.Timeout | null>(null);
+  const [showAdvanceMessage, setShowAdvanceMessage] = useState(false);
+  const { userVote } = useVotes(pollId);
 
   useEffect(() => {
     if (polls.length > 0 && pollId) {
@@ -39,13 +43,27 @@ const PollView = () => {
   const nextPoll = () => {
     if (currentIndex < categoryPolls.length - 1) {
       const nextPollData = categoryPolls[currentIndex + 1];
-      navigate(`/poll/${nextPollData.id}`);
+      const titleSlug = nextPollData.title
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .trim()
+        .substring(0, 50);
+      navigate(`/poll/${nextPollData.id}/${titleSlug}`);
     } else {
       // If at the end, go to a random poll from the same category
       const randomIndex = Math.floor(Math.random() * categoryPolls.length);
       const randomPoll = categoryPolls[randomIndex];
       if (randomPoll && randomPoll.id !== pollId) {
-        navigate(`/poll/${randomPoll.id}`);
+        const titleSlug = randomPoll.title
+          .toLowerCase()
+          .replace(/[^a-z0-9\s-]/g, '')
+          .replace(/\s+/g, '-')
+          .replace(/-+/g, '-')
+          .trim()
+          .substring(0, 50);
+        navigate(`/poll/${randomPoll.id}/${titleSlug}`);
       }
     }
   };
@@ -53,12 +71,26 @@ const PollView = () => {
   const prevPoll = () => {
     if (currentIndex > 0) {
       const prevPollData = categoryPolls[currentIndex - 1];
-      navigate(`/poll/${prevPollData.id}`);
+      const titleSlug = prevPollData.title
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .trim()
+        .substring(0, 50);
+      navigate(`/poll/${prevPollData.id}/${titleSlug}`);
     } else {
       // If at the beginning, go to the last poll
       const lastPoll = categoryPolls[categoryPolls.length - 1];
       if (lastPoll) {
-        navigate(`/poll/${lastPoll.id}`);
+        const titleSlug = lastPoll.title
+          .toLowerCase()
+          .replace(/[^a-z0-9\s-]/g, '')
+          .replace(/\s+/g, '-')
+          .replace(/-+/g, '-')
+          .trim()
+          .substring(0, 50);
+        navigate(`/poll/${lastPoll.id}/${titleSlug}`);
       }
     }
   };
@@ -69,12 +101,24 @@ const PollView = () => {
       clearTimeout(autoAdvanceTimer);
     }
 
+    // Show the advance message
+    setShowAdvanceMessage(true);
+
     // Set a 5-second timer to advance to next poll
     const timer = setTimeout(() => {
+      setShowAdvanceMessage(false);
       nextPoll();
     }, 5000);
     
     setAutoAdvanceTimer(timer);
+  };
+
+  const cancelAutoAdvance = () => {
+    if (autoAdvanceTimer) {
+      clearTimeout(autoAdvanceTimer);
+      setAutoAdvanceTimer(null);
+    }
+    setShowAdvanceMessage(false);
   };
 
   // Cleanup timer on component unmount
@@ -152,11 +196,42 @@ const PollView = () => {
           )}
 
           <div className="w-full">
-            <PollCard
-              poll={currentPoll}
-              isActive={true}
-              onVote={handleVote}
-            />
+            <div className="relative">
+              <PollCard
+                poll={currentPoll}
+                isActive={true}
+                onVote={handleVote}
+              />
+              
+              {/* Show advance message and already voted notice inside the card */}
+              {(showAdvanceMessage || (user && userVote)) && (
+                <div className="absolute bottom-4 left-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg p-4 border border-gray-200 shadow-lg">
+                  {user && userVote && (
+                    <div className="text-center mb-2">
+                      <p className="text-sm text-blue-600 font-medium">
+                        ✓ You've already voted on this poll
+                      </p>
+                    </div>
+                  )}
+                  
+                  {showAdvanceMessage && (
+                    <div className="text-center">
+                      <p className="text-sm text-gray-600 mb-2">
+                        Moving to next poll in 5 seconds...
+                      </p>
+                      <Button
+                        onClick={cancelAutoAdvance}
+                        variant="outline"
+                        size="sm"
+                        className="text-xs"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

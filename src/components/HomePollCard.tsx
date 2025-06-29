@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import SocialShare from './SocialShare';
 import { useBookmarks } from '@/hooks/useBookmarks';
+import { useVotes } from '@/hooks/useVotes';
 import { Bookmark, BookmarkCheck, Vote } from 'lucide-react';
 
 interface HomePollCardProps {
@@ -15,6 +16,7 @@ const HomePollCard = ({ poll }: HomePollCardProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { bookmarkedPolls, toggleBookmark, loading: bookmarkLoading } = useBookmarks();
+  const { votes } = useVotes(poll.id);
   const isBookmarked = bookmarkedPolls.has(poll.id);
 
   const handleBookmarkToggle = async () => {
@@ -23,8 +25,17 @@ const HomePollCard = ({ poll }: HomePollCardProps) => {
   };
 
   const handleVoteClick = () => {
-    // Navigate to the poll viewing page with the specific poll
-    navigate(`/poll/${poll.id}`);
+    // Create a clean URL slug from the poll title
+    const titleSlug = poll.title
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+      .replace(/\s+/g, '-') // Replace spaces with hyphens
+      .replace(/-+/g, '-') // Replace multiple hyphens with single
+      .trim()
+      .substring(0, 50); // Limit length
+
+    // Navigate to the poll viewing page with clean URL
+    navigate(`/poll/${poll.id}/${titleSlug}`);
   };
 
   const getCategoryColor = () => {
@@ -47,7 +58,8 @@ const HomePollCard = ({ poll }: HomePollCardProps) => {
     return 'from-gray-50 to-gray-100';
   };
 
-  const totalVotes = poll.options.reduce((sum, option) => sum + option.votes, 0);
+  // Calculate total votes from actual vote data
+  const totalVotes = Object.values(votes).reduce((sum, count) => sum + count, 0);
 
   return (
     <div className="w-full h-full">
