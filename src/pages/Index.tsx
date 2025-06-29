@@ -8,6 +8,7 @@ import Footer from '@/components/Footer';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import EmptyPollsState from '@/components/EmptyPollsState';
 import HomePollCard from '@/components/HomePollCard';
+import TrendingPollCard from '@/components/TrendingPollCard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp, Clock, Star, BarChart3, Users, Vote, ArrowRight, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
@@ -22,6 +23,7 @@ const Index = () => {
     totalVotes: 0,
     activeParticipants: 0
   });
+  const [trendingPolls, setTrendingPolls] = useState([]);
   const pollsPerPage = 15;
 
   console.log('Index component - Polls:', polls, 'Loading:', loading);
@@ -77,6 +79,44 @@ const Index = () => {
     }
   }, [polls]);
 
+  // Fetch trending polls (admin-assigned polls for trending section)
+  useEffect(() => {
+    const fetchTrendingPolls = async () => {
+      try {
+        // For now, we'll use the most voted polls as trending
+        // In the future, admin can assign specific polls to trending
+        const { data: voteCounts } = await supabase
+          .from('votes')
+          .select('poll_id');
+
+        if (voteCounts) {
+          // Count votes per poll
+          const pollVoteCounts = voteCounts.reduce((acc, vote) => {
+            acc[vote.poll_id] = (acc[vote.poll_id] || 0) + 1;
+            return acc;
+          }, {});
+
+          // Get top 3 most voted polls
+          const topPollIds = Object.entries(pollVoteCounts)
+            .sort(([,a], [,b]) => b - a)
+            .slice(0, 3)
+            .map(([pollId]) => pollId);
+
+          const topPolls = polls.filter(poll => topPollIds.includes(poll.id));
+          setTrendingPolls(topPolls);
+        }
+      } catch (error) {
+        console.error('Error fetching trending polls:', error);
+        // Fallback to first 3 polls
+        setTrendingPolls(polls.slice(0, 3));
+      }
+    };
+
+    if (polls.length > 0) {
+      fetchTrendingPolls();
+    }
+  }, [polls]);
+
   // Filter polls based on URL params
   const filteredPolls = polls.filter(poll => {
     if (category && poll.category !== category) return false;
@@ -86,8 +126,9 @@ const Index = () => {
   // Sort polls based on URL params
   const sortedPolls = [...filteredPolls].sort((a, b) => {
     if (sort === 'popular') {
-      const aVotes = a.options.reduce((sum, option) => sum + option.votes, 0);
-      const bVotes = b.options.reduce((sum, option) => sum + option.votes, 0);
+      // Get actual vote counts from database
+      const aVotes = Object.values(a.votes || {}).reduce((sum, count) => sum + count, 0);
+      const bVotes = Object.values(b.votes || {}).reduce((sum, count) => sum + count, 0);
       return bVotes - aVotes;
     }
     if (sort === 'latest') {
@@ -120,11 +161,12 @@ const Index = () => {
     .slice(0, 6);
 
   const popularPolls = filteredPolls
-    .sort((a, b) => {
-      const aVotes = a.options.reduce((sum, option) => sum + option.votes, 0);
-      const bVotes = b.options.reduce((sum, option) => sum + option.votes, 0);
-      return bVotes - aVotes;
+    .map(poll => {
+      // Calculate actual votes from database
+      const totalVotes = Object.values(poll.votes || {}).reduce((sum, count) => sum + count, 0);
+      return { ...poll, totalVotes };
     })
+    .sort((a, b) => b.totalVotes - a.totalVotes)
     .slice(0, 6);
 
   const unvotedPolls = user 
@@ -398,6 +440,40 @@ const Index = () => {
             </div>
 
             <div className="space-y-16">
+              {/* Trending Section */}
+              <div>
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <CardTitle className="flex items-center gap-2">
+                          <TrendingUp className="w-5 h-5 text-red-600" />
+                          Trending
+                        </CardTitle>
+                        <CardDescription>
+                          Hot topics everyone's talking about right now
+                        </CardDescription>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {trendingPolls.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {trendingPolls.map((poll) => (
+                          <div key={poll.id} className="h-full">
+                            <TrendingPollCard poll={poll} />
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-12">
+                        <p className="text-gray-500 text-lg">No trending polls available</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+
               {/* Featured Section */}
               <div>
                 <Card>

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -20,6 +19,7 @@ export interface DatabasePoll {
   category: string | null;
   tags: string[] | null;
   user_has_voted?: boolean;
+  votes?: Record<string, number>; // Add votes data for sorting
 }
 
 export const usePolls = () => {
@@ -51,6 +51,26 @@ export const usePolls = () => {
         tags: poll.tags || [],
         user_has_voted: false
       })) || [];
+
+      // Fetch vote counts for each poll
+      const { data: allVotes } = await supabase
+        .from('votes')
+        .select('poll_id, option_id');
+
+      // Calculate vote counts per poll and option
+      const votesByPoll: Record<string, Record<string, number>> = {};
+      allVotes?.forEach(vote => {
+        if (!votesByPoll[vote.poll_id]) {
+          votesByPoll[vote.poll_id] = {};
+        }
+        votesByPoll[vote.poll_id][vote.option_id] = (votesByPoll[vote.poll_id][vote.option_id] || 0) + 1;
+      });
+
+      // Add vote data to polls
+      pollsWithTypedOptions = pollsWithTypedOptions.map(poll => ({
+        ...poll,
+        votes: votesByPoll[poll.id] || {}
+      }));
 
       // If user is logged in, check which polls they've voted on and prioritize unvoted polls
       if (user) {

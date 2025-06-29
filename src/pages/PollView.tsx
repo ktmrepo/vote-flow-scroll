@@ -21,6 +21,7 @@ const PollView = () => {
   const [categoryPolls, setCategoryPolls] = useState([]);
   const [autoAdvanceTimer, setAutoAdvanceTimer] = useState<NodeJS.Timeout | null>(null);
   const [showAdvanceMessage, setShowAdvanceMessage] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const { userVote } = useVotes(pollId);
 
   useEffect(() => {
@@ -40,30 +41,35 @@ const PollView = () => {
     }
   }, [polls, pollId]);
 
-  const nextPoll = () => {
-    if (currentIndex < categoryPolls.length - 1) {
-      const nextPollData = categoryPolls[currentIndex + 1];
-      const titleSlug = nextPollData.title
+  const navigateWithAnimation = (targetPoll) => {
+    setIsTransitioning(true);
+    
+    setTimeout(() => {
+      const titleSlug = targetPoll.title
         .toLowerCase()
         .replace(/[^a-z0-9\s-]/g, '')
         .replace(/\s+/g, '-')
         .replace(/-+/g, '-')
         .trim()
         .substring(0, 50);
-      navigate(`/poll/${nextPollData.id}/${titleSlug}`);
+      navigate(`/poll/${targetPoll.id}/${titleSlug}`);
+      
+      setTimeout(() => {
+        setIsTransitioning(false);
+      }, 100);
+    }, 300);
+  };
+
+  const nextPoll = () => {
+    if (currentIndex < categoryPolls.length - 1) {
+      const nextPollData = categoryPolls[currentIndex + 1];
+      navigateWithAnimation(nextPollData);
     } else {
       // If at the end, go to a random poll from the same category
       const randomIndex = Math.floor(Math.random() * categoryPolls.length);
       const randomPoll = categoryPolls[randomIndex];
       if (randomPoll && randomPoll.id !== pollId) {
-        const titleSlug = randomPoll.title
-          .toLowerCase()
-          .replace(/[^a-z0-9\s-]/g, '')
-          .replace(/\s+/g, '-')
-          .replace(/-+/g, '-')
-          .trim()
-          .substring(0, 50);
-        navigate(`/poll/${randomPoll.id}/${titleSlug}`);
+        navigateWithAnimation(randomPoll);
       }
     }
   };
@@ -71,26 +77,12 @@ const PollView = () => {
   const prevPoll = () => {
     if (currentIndex > 0) {
       const prevPollData = categoryPolls[currentIndex - 1];
-      const titleSlug = prevPollData.title
-        .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, '')
-        .replace(/\s+/g, '-')
-        .replace(/-+/g, '-')
-        .trim()
-        .substring(0, 50);
-      navigate(`/poll/${prevPollData.id}/${titleSlug}`);
+      navigateWithAnimation(prevPollData);
     } else {
       // If at the beginning, go to the last poll
       const lastPoll = categoryPolls[categoryPolls.length - 1];
       if (lastPoll) {
-        const titleSlug = lastPoll.title
-          .toLowerCase()
-          .replace(/[^a-z0-9\s-]/g, '')
-          .replace(/\s+/g, '-')
-          .replace(/-+/g, '-')
-          .trim()
-          .substring(0, 50);
-        navigate(`/poll/${lastPoll.id}/${titleSlug}`);
+        navigateWithAnimation(lastPoll);
       }
     }
   };
@@ -196,16 +188,20 @@ const PollView = () => {
           )}
 
           <div className="w-full">
-            <div className="relative">
+            <div 
+              className={`relative transition-all duration-300 ${
+                isTransitioning ? 'opacity-0 transform scale-95' : 'opacity-100 transform scale-100'
+              }`}
+            >
               <PollCard
                 poll={currentPoll}
                 isActive={true}
                 onVote={handleVote}
               />
               
-              {/* Show advance message and already voted notice inside the card */}
+              {/* Show advance message and already voted notice below options */}
               {(showAdvanceMessage || (user && userVote)) && (
-                <div className="absolute bottom-4 left-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg p-4 border border-gray-200 shadow-lg">
+                <div className="mt-4 bg-white/90 backdrop-blur-sm rounded-lg p-4 border border-gray-200 shadow-lg">
                   {user && userVote && (
                     <div className="text-center mb-2">
                       <p className="text-sm text-blue-600 font-medium">

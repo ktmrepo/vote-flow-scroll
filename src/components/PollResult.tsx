@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { Poll } from '@/data/pollData';
 
@@ -41,7 +40,6 @@ const PollResult = ({ poll, selectedOption }: PollResultProps) => {
       <div className={`text-center transform transition-all duration-700 ${
         animationStep >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
       }`}>
-        <h3 className="text-2xl font-bold text-gray-800 mb-2">Poll Results</h3>
         <p className="text-gray-600">Total votes: {totalVotes.toLocaleString()}</p>
       </div>
 
